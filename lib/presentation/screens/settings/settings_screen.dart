@@ -5,7 +5,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../providers/auth_providers.dart';
 import '../../providers/content_providers.dart';
 import '../../providers/settings_providers.dart';
 import '../../providers/theme_providers.dart';
@@ -17,9 +16,6 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = ref.watch(isDarkModeProvider);
-    final authState = ref.watch(authProvider);
-    final isLoggedIn = authState.status == AuthStatus.authenticated;
-    final notifPrefs = ref.watch(notificationPrefsProvider);
 
     Future<void> openConfigPage(String key, String title) async {
       try {
@@ -54,60 +50,12 @@ class SettingsScreen extends ConsumerWidget {
       ),
       body: ListView(
         children: [
-          // Profile Section
-          _SectionHeader(title: isLoggedIn ? 'حسابي' : 'تسجيل الدخول'),
-          if (isLoggedIn) ...[
-            InkWell(
-              onTap: () => context.push('/profile'),
-              child: _ProfileTile(
-                name: authState.user?.name ?? '',
-                email: authState.user?.email ?? '',
-              ),
-            ),
-            _SettingsTile(
-              icon: Icons.logout_rounded,
-              label: 'تسجيل الخروج',
-              color: AppColors.error,
-              onTap: () async {
-                final confirmed = await _showLogoutDialog(context);
-                if (confirmed == true) {
-                  await ref.read(authProvider.notifier).logout();
-                }
-              },
-            ),
-          ] else ...[
-            _SettingsTile(
-              icon: Icons.login_rounded,
-              label: 'تسجيل الدخول',
-              onTap: () => context.push('/login'),
-            ),
-            _SettingsTile(
-              icon: Icons.person_add_outlined,
-              label: 'إنشاء حساب',
-              onTap: () => context.push('/register'),
-            ),
-          ],
-
           const _SectionHeader(title: 'المظهر'),
           _SwitchTile(
             icon: Icons.dark_mode_outlined,
             label: 'الوضع الليلي',
             value: isDark,
             onChanged: (v) => ref.read(isDarkModeProvider.notifier).setDark(v),
-          ),
-
-          const _SectionHeader(title: 'الإشعارات'),
-          _SwitchTile(
-            icon: Icons.notifications_outlined,
-            label: 'إشعارات الأخبار العاجلة',
-            value: notifPrefs.breaking,
-            onChanged: (v) => ref.read(notificationPrefsProvider.notifier).setBreaking(v),
-          ),
-          _SwitchTile(
-            icon: Icons.campaign_outlined,
-            label: 'إشعارات الأخبار العامة',
-            value: notifPrefs.daily,
-            onChanged: (v) => ref.read(notificationPrefsProvider.notifier).setDaily(v),
           ),
 
           const _SectionHeader(title: 'عام'),
@@ -193,27 +141,6 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Future<bool?> _showLogoutDialog(BuildContext context) => showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text('تسجيل الخروج', style: AppTypography.headlineMd),
-          content: Text(
-            'هل تريد تسجيل الخروج من حسابك؟',
-            style: AppTypography.bodyMd.copyWith(color: AppColors.secondary),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('خروج'),
-            ),
-          ],
-        ),
-      );
 }
 
 class _SectionHeader extends StatelessWidget {
@@ -243,7 +170,6 @@ class _SectionHeader extends StatelessWidget {
 class _SettingsTile extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color? color;
   final Widget? trailing;
   final VoidCallback onTap;
 
@@ -251,7 +177,6 @@ class _SettingsTile extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.color,
     this.trailing,
   });
 
@@ -259,11 +184,11 @@ class _SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return ListTile(
-      leading: Icon(icon, color: color ?? AppColors.secondary, size: 22),
+      leading: Icon(icon, color: AppColors.secondary, size: 22),
       title: Text(
         label,
         style: AppTypography.bodyMd.copyWith(
-          color: color ?? (isDark ? AppColors.inverseOnSurface : AppColors.onSurface),
+          color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
         ),
       ),
       trailing: trailing ?? Icon(Icons.arrow_back_ios_rounded, size: 14, color: AppColors.secondary.withValues(alpha: 0.5)),
@@ -297,42 +222,3 @@ class _SwitchTile extends StatelessWidget {
   }
 }
 
-class _ProfileTile extends StatelessWidget {
-  final String name;
-  final String email;
-  const _ProfileTile({required this.name, required this.email});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.containerMargin),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppColors.primaryContainer.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.primaryContainer.withValues(alpha: 0.3)),
-            ),
-            child: Center(
-              child: Text(
-                name.isNotEmpty ? name[0].toUpperCase() : 'م',
-                style: AppTypography.headlineLgMobile.copyWith(color: AppColors.primaryContainer),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(name, style: AppTypography.bodyMd.copyWith(fontWeight: FontWeight.w700)),
-              Text(email, style: AppTypography.labelSm.copyWith(color: AppColors.secondary)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}

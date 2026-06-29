@@ -381,11 +381,6 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                               icon: Icons.visibility_outlined,
                               label: _formatCount(article.viewCount),
                             ),
-                          if (article.commentCount > 0)
-                            _MetaItem(
-                              icon: Icons.forum_outlined,
-                              label: _formatCount(article.commentCount),
-                            ),
                         ],
                       ),
                       const SizedBox(height: AppSpacing.gutter),
@@ -566,11 +561,6 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                         ),
                         const SizedBox(height: AppSpacing.stackLg),
                       ],
-                      // Inline comments CTA
-                      _CommentsCta(
-                        count: article.commentCount,
-                        onTap: () => context.push('/comments/${article.id}', extra: article.title),
-                      ),
                       const SizedBox(height: AppSpacing.sectionGap),
                       // Related Posts
                       Row(
@@ -665,12 +655,6 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                   icon: Icons.text_fields_rounded,
                   label: 'الخط',
                   onTap: _openReadingSettings,
-                ),
-                _BottomAction(
-                  icon: Icons.forum_outlined,
-                  label: 'تعليق',
-                  badge: article.commentCount > 0 ? _formatCount(article.commentCount) : null,
-                  onTap: () => context.push('/comments/${article.id}', extra: article.title),
                 ),
                 _BottomAction(
                   icon: Icons.ios_share_rounded,
@@ -799,57 +783,17 @@ class _SizeButton extends StatelessWidget {
   }
 }
 
-class _CommentsCta extends StatelessWidget {
-  final int count;
-  final VoidCallback onTap;
-  const _CommentsCta({required this.count, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: isDark ? Colors.white.withValues(alpha: 0.04) : AppColors.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.15)),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.forum_outlined, size: 20, color: AppColors.primary),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                count > 0 ? 'التعليقات ($count)' : 'كن أول من يعلّق',
-                style: AppTypography.labelMd.copyWith(
-                  color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const Icon(Icons.arrow_back_ios_new_rounded, size: 14, color: AppColors.secondary),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _BottomAction extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
   final Color? color;
-  final String? badge;
 
   const _BottomAction({
     required this.icon,
     required this.label,
     required this.onTap,
     this.color,
-    this.badge,
   });
 
   @override
@@ -863,32 +807,7 @@ class _BottomAction extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(icon, size: 23, color: c),
-                if (badge != null)
-                  Positioned(
-                    right: -8,
-                    top: -6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryContainer,
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      child: Text(
-                        badge!,
-                        style: AppTypography.labelSm.copyWith(
-                          color: AppColors.onPrimary,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+            Icon(icon, size: 23, color: c),
             const SizedBox(height: 3),
             Text(
               label,

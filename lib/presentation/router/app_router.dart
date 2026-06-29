@@ -9,7 +9,6 @@ import '../screens/author/author_screen.dart';
 import '../screens/bookmarks/bookmarks_screen.dart';
 import '../screens/categories/categories_screen.dart';
 import '../screens/category/category_screen.dart';
-import '../screens/comments/comments_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/most_viewed/most_viewed_screen.dart';
 import '../screens/news_detail/news_detail_screen.dart';
@@ -107,15 +106,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           final category = state.extra as Category?;
           final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
           return _page(state, CategoryScreen(category: category, categoryId: id));
-        },
-      ),
-      GoRoute(
-        path: '/comments/:id',
-        name: 'comments',
-        pageBuilder: (context, state) {
-          final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
-          final title = state.extra as String? ?? '';
-          return _page(state, CommentsScreen(postId: id, postTitle: title));
         },
       ),
       GoRoute(

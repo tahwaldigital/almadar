@@ -46,12 +46,7 @@ class CategoriesScreen extends ConsumerWidget {
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_outlined, color: AppColors.primary),
-          ),
-        ],
+        actions: const [],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(

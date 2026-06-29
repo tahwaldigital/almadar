@@ -1,6 +1,5 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../providers/news_providers.dart';
@@ -67,11 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                         // Brand logo
                         const AppLogo(height: 34),
-                        IconButton(
-                          onPressed: () => context.push('/notifications'),
-                          icon: const Icon(Icons.notifications_outlined),
-                          color: AppColors.primary,
-                        ),
+                        const SizedBox(width: 48),
                       ],
                     ),
                   ),

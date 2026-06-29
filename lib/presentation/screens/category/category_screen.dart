@@ -396,15 +396,6 @@ class _CategoryNewsItem extends ConsumerWidget {
                               color: AppColors.secondary.withValues(alpha: 0.7),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Icon(Icons.chat_bubble_outline_rounded, size: 14, color: AppColors.secondary.withValues(alpha: 0.7)),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${article.commentCount}',
-                            style: AppTypography.labelSm.copyWith(
-                              color: AppColors.secondary.withValues(alpha: 0.7),
-                            ),
-                          ),
                         ],
                       ),
                       Row(

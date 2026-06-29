@@ -3,15 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/notification_store.dart';
 import '../../domain/entities/article.dart';
 import '../../domain/entities/author.dart';
-import '../../domain/entities/comment.dart';
 import '../../domain/entities/page_entity.dart';
 import 'providers.dart';
-
-// ── Comments ──────────────────────────────────────────────────────────────────
-final commentsProvider =
-    FutureProvider.family<List<CommentEntity>, int>((ref, postId) async {
-  return ref.read(contentRemoteDataSourceProvider).getComments(postId);
-});
 
 // ── Videos ────────────────────────────────────────────────────────────────────
 final videosProvider = FutureProvider<List<Article>>((ref) async {

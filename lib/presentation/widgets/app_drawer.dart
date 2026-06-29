@@ -1,20 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
-import '../providers/auth_providers.dart';
 import 'app_logo.dart';
 
-class AppDrawer extends ConsumerWidget {
+class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final auth = ref.watch(authProvider);
-    final isLoggedIn = auth.status == AuthStatus.authenticated && auth.user != null;
-
+  Widget build(BuildContext context) {
     return Drawer(
       child: SafeArea(
         child: Column(
@@ -25,31 +20,6 @@ class AppDrawer extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const AppLogo(height: 40),
-                  const SizedBox(height: 16),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context);
-                      context.push('/profile');
-                    },
-                    child: Row(
-                      children: [
-                        const CircleAvatar(
-                          radius: 22,
-                          backgroundColor: AppColors.primaryContainer,
-                          child: Icon(Icons.person, color: Colors.white),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            isLoggedIn ? auth.user!.name : 'تسجيل الدخول',
-                            style: AppTypography.labelMd.copyWith(fontWeight: FontWeight.w700),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const Icon(Icons.chevron_left, size: 20),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -63,8 +33,6 @@ class AppDrawer extends ConsumerWidget {
                   _item(context, Icons.smart_display_outlined, 'فيديوهات', '/videos'),
                   _item(context, Icons.local_fire_department_outlined, 'الأكثر مشاهدة', '/most-viewed'),
                   _item(context, Icons.bookmark_outline, 'المحفوظات', '/bookmarks', go: true),
-                  _item(context, Icons.notifications_outlined, 'الإشعارات', '/notifications'),
-                  _item(context, Icons.person_outline, 'حسابي', '/profile'),
                   const Divider(),
                   _item(context, Icons.settings_outlined, 'الإعدادات', '/settings', go: true),
                 ],
