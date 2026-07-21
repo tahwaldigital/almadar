@@ -1,0 +1,132 @@
+name: iOS Build
+
+# بناء تطبيق الآيفون على سيرفر macOS من GitHub (لا يحتاج جهاز Mac).
+#
+# - build-unsigned: يعمل فورًا بدون أي أسرار، ويثبت أن المشروع يُبنى بنجاح.
+# - build-signed:   يُنتج ملف .ipa جاهز لـ TestFlight، ويعمل فقط عند ضبط الأسرار.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # تشغيل يدوي من تبويب Actions
+
+env:
+  FLUTTER_VERSION: "3.29.3"
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # 1) بناء بدون توقيع — يعمل بدون أي إعداد مسبق
+  # ─────────────────────────────────────────────────────────────
+  build-unsigned:
+    name: Build iOS (unsigned)
+    runs-on: macos-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify Firebase iOS config
+        run: |
+          if [ ! -f ios/Runner/GoogleService-Info.plist ]; then
+            echo "::error::ios/Runner/GoogleService-Info.plist مفقود — إشعارات iOS لن تعمل."
+            exit 1
+          fi
+          echo "GoogleService-Info.plist ✓"
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: CocoaPods install
+        run: |
+          cd ios
+          pod install --repo-update
+          cd ..
+
+      - name: Build iOS (no codesign)
+        run: flutter build ios --release --no-codesign
+
+      - name: Upload .app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-app-unsigned
+          path: build/ios/iphoneos/Runner.app
+          retention-days: 14
+
+  # ─────────────────────────────────────────────────────────────
+  # 2) بناء موقّع + رفع إلى TestFlight (يتطلب الأسرار أدناه)
+  # ─────────────────────────────────────────────────────────────
+  build-signed:
+    name: Build signed IPA + TestFlight
+    runs-on: macos-latest
+    timeout-minutes: 60
+    # لا يعمل إلا عند التشغيل اليدوي، حتى لا يفشل كل push قبل ضبط الأسرار.
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Import signing certificate
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.IOS_CERTIFICATE_P12 }}
+          p12-password: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+
+      - name: Install provisioning profile
+        run: |
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "${{ secrets.IOS_PROVISIONING_PROFILE }}" | base64 --decode \
+            > ~/Library/MobileDevice/Provisioning\ Profiles/build.mobileprovision
+
+      - name: CocoaPods install
+        run: |
+          cd ios
+          pod install --repo-update
+          cd ..
+
+      - name: Build IPA
+        run: |
+          flutter build ipa --release \
+            --export-options-plist=ios/ExportOptions.plist
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: almadar-news-ipa
+          path: build/ios/ipa/*.ipa
+          retention-days: 14
+
+      - name: Upload to TestFlight
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
+        run: |
+          mkdir -p ~/private_keys
+          echo "$APP_STORE_CONNECT_KEY" | base64 --decode \
+            > ~/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8
+          xcrun altool --upload-app -f build/ios/ipa/*.ipa -t ios \
+            --apiKey "$APP_STORE_CONNECT_KEY_ID" \
+            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"

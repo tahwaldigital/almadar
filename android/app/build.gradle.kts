@@ -5,6 +5,8 @@ plugins {
     id("com.android.application")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
+    // يجب أن يأتي بعد إضافة أندرويد/فلاتر؛ يقرأ android/app/google-services.json.
+    id("com.google.gms.google-services")
 }
 
 // ── Load signing credentials from key.properties (never committed to VCS) ──────
@@ -39,7 +41,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.almadar.almadar_news"
+        applicationId = "almadar.news"
         minSdk        = flutter.minSdkVersion
         targetSdk     = flutter.targetSdkVersion
         versionCode   = flutter.versionCode
@@ -49,8 +51,16 @@ android {
     buildTypes {
         release {
             signingConfig   = signingConfigs.getByName("release")
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            // ضمّن رموز تصحيح الأخطاء للكود الأصلي (native) في الـ AAB
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
         }
         debug {
             signingConfig = signingConfigs.getByName("debug")

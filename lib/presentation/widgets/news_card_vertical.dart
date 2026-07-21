@@ -16,11 +16,6 @@ class NewsCardVertical extends StatelessWidget {
     this.width = 280,
   });
 
-  String _formatCount(int n) {
-    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}ألف';
-    return '$n';
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -144,18 +139,6 @@ class NewsCardVertical extends StatelessWidget {
                           color: AppColors.secondary,
                         ),
                       ),
-                      if (article.viewCount > 0) ...[
-                        const SizedBox(width: 12),
-                        Icon(Icons.visibility_outlined,
-                            size: 13, color: AppColors.secondary),
-                        const SizedBox(width: 4),
-                        Text(
-                          _formatCount(article.viewCount),
-                          style: AppTypography.labelSm.copyWith(
-                            color: AppColors.secondary,
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ],

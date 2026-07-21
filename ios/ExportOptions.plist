@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- app-store: للرفع إلى TestFlight / App Store -->
+	<key>method</key>
+	<string>app-store</string>
+
+	<!-- استبدل TEAMID بمعرّف فريقك في Apple Developer -->
+	<key>teamID</key>
+	<string>REPLACE_WITH_TEAM_ID</string>
+
+	<key>uploadSymbols</key>
+	<true/>
+	<key>uploadBitcode</key>
+	<false/>
+	<key>signingStyle</key>
+	<string>manual</string>
+	<key>destination</key>
+	<string>export</string>
+</dict>
+</plist>

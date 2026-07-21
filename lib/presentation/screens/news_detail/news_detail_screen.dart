@@ -5,6 +5,7 @@ import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_typography.dart';
@@ -17,6 +18,7 @@ import '../../providers/theme_providers.dart';
 import '../../widgets/article_video_player.dart';
 import '../../widgets/news_card_horizontal.dart';
 import '../../widgets/skeleton_loader.dart';
+import '../../widgets/social_follow_section.dart';
 
 class NewsDetailScreen extends ConsumerStatefulWidget {
   final Article? article;
@@ -70,14 +72,26 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
   }
 
   /// Keeps in-article links native: an internal post link (?p=ID) opens the
-  /// article inside the app; anything else is ignored (no browser, no webview).
-  void _handleInContentLink(String? url) {
+  /// article inside the app; any other (external) link opens in the browser.
+  Future<void> _handleInContentLink(String? url) async {
     if (url == null || url.isEmpty) return;
     final uri = Uri.tryParse(url);
     if (uri == null) return;
     final pid = uri.queryParameters['p'];
     if (pid != null && int.tryParse(pid) != null) {
       context.push('/article/$pid');
+      return;
+    }
+    // رابط خارجي: افتحه في المتصفح بدل تجاهله (لا روابط معطّلة).
+    if (uri.hasScheme) {
+      try {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('تعذّر فتح الرابط')));
+        }
+      }
     }
   }
 
@@ -97,12 +111,6 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
     final words = text.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
     final mins = (words / 180).ceil();
     return mins < 1 ? 1 : mins;
-  }
-
-  String _formatCount(int n) {
-    if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}م';
-    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}ألف';
-    return '$n';
   }
 
   void _openReadingSettings() {
@@ -362,12 +370,16 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.stackMd),
-                      // Meta strip: reading time • views • comments
+                      // Meta strip: date • reading time • comments
                       Wrap(
                         spacing: 14,
                         runSpacing: 6,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
+                          _MetaItem(
+                            icon: Icons.calendar_today_rounded,
+                            label: AppDateUtils.formatDateTime(article.datePublished),
+                          ),
                           _MetaItem(
                             icon: Icons.schedule_rounded,
                             label: AppDateUtils.timeAgo(article.datePublished),
@@ -376,13 +388,17 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                             icon: Icons.menu_book_rounded,
                             label: 'قراءة ${_readingTimeMinutes(article.content)} د',
                           ),
-                          if (article.viewCount > 0)
-                            _MetaItem(
-                              icon: Icons.visibility_outlined,
-                              label: _formatCount(article.viewCount),
-                            ),
                         ],
                       ),
+                      // عزو المصدر الأصلي للأخبار المنقولة (متطلب سياسة الأخبار).
+                      if (article.hasSource) ...[
+                        const SizedBox(height: AppSpacing.stackMd),
+                        _SourceAttribution(
+                          source: article.source,
+                          sourceUrl: article.sourceUrl,
+                          onOpen: () => _handleInContentLink(article.sourceUrl),
+                        ),
+                      ],
                       const SizedBox(height: AppSpacing.gutter),
                       // Author row
                       Container(
@@ -437,7 +453,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                                       ),
                                     ),
                                     Text(
-                                      'فريق تحرير المدار',
+                                      AppDateUtils.formatDateTime(article.datePublished),
                                       style: AppTypography.labelSm.copyWith(color: AppColors.secondary),
                                     ),
                                   ],
@@ -594,6 +610,9 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                           );
                         },
                       ),
+                      const SizedBox(height: AppSpacing.sectionGap),
+                      // تابعنا على مواقع التواصل الاجتماعي (روابط من لوحة التحكم)
+                      const SocialFollowSection(),
                       const SizedBox(height: 100),
                     ],
                   ),
@@ -703,6 +722,53 @@ class _CircleIconButton extends StatelessWidget {
           ),
           child: Icon(icon, size: 19, color: Colors.white),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// عزو المصدر الأصلي للخبر المنقول؛ قابل للنقر إن توفّر رابط المصدر.
+class _SourceAttribution extends StatelessWidget {
+  final String source;
+  final String sourceUrl;
+  final VoidCallback onOpen;
+  const _SourceAttribution({
+    required this.source,
+    required this.sourceUrl,
+    required this.onOpen,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasUrl = sourceUrl.trim().isNotEmpty;
+    return GestureDetector(
+      onTap: hasUrl ? onOpen : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.primaryContainer.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.link_rounded, size: 16, color: AppColors.primary),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                'المصدر: $source',
+                style: AppTypography.labelSm.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            if (hasUrl) ...[
+              const SizedBox(width: 6),
+              const Icon(Icons.open_in_new_rounded, size: 14, color: AppColors.primary),
+            ],
+          ],
         ),
       ),
     );

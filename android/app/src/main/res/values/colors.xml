@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- خلفية شاشة الإطلاق (Splash) — الوضع الفاتح -->
+    <color name="splash_background">#FFFFFF</color>
 </resources>

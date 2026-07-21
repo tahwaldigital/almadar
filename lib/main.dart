@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -7,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -49,6 +51,8 @@ Future<void> _showNotification(RemoteMessage message) async {
     message.notification?.title ?? 'المدار الإخبارية',
     message.notification?.body ?? '',
     details,
+    // نمرّر معرّف الخبر ليُفتح المقال عند النقر على الإشعار المعروض محليًا.
+    payload: message.data['post_id']?.toString(),
   );
 
   // Persist for the in-app notifications center.
@@ -63,12 +67,62 @@ Future<void> _showNotification(RemoteMessage message) async {
 }
 
 /// Deep-link into an article when a push notification is tapped.
+///
+/// The router may not be mounted yet (cold start from a notification), so the
+/// route is retried on later frames instead of being dropped.
 void _routeFromMessage(RemoteMessage message) {
   final postId = message.data['post_id']?.toString();
-  final ctx = rootNavigatorKey.currentContext;
-  if (postId != null && ctx != null && int.tryParse(postId) != null) {
-    ctx.push('/article/$postId');
+  if (postId == null || int.tryParse(postId) == null) return;
+  _pushWhenReady('/article/$postId');
+}
+
+/// Tap on a locally-shown notification (foreground messages). The FCM
+/// onMessageOpenedApp stream does NOT fire for these, so we route from payload.
+void _onLocalNotificationTap(NotificationResponse response) {
+  final postId = response.payload;
+  if (postId != null && postId.isNotEmpty && int.tryParse(postId) != null) {
+    _pushWhenReady('/article/$postId');
   }
+}
+
+/// Subscribe to topics and register the device token — best-effort and
+/// deliberately NOT awaited before runApp, so a slow network never delays
+/// app startup.
+Future<void> _registerForPush() async {
+  try {
+    final messaging = FirebaseMessaging.instance;
+    await messaging.subscribeToTopic(ApiConstants.topicAll);
+    await messaging.subscribeToTopic(ApiConstants.topicBreaking);
+    final fcmToken = await messaging.getToken();
+    if (fcmToken != null) {
+      await DioClient().post(
+        ApiConstants.devicesRegister,
+        data: {
+          'token': fcmToken,
+          'platform': Platform.isIOS ? 'ios' : 'android',
+          'topics': [ApiConstants.topicAll, ApiConstants.topicBreaking],
+          'lang': 'ar',
+        },
+      );
+    }
+  } catch (_) {
+    // Backend unreachable or push disabled; ignore.
+  }
+}
+
+void _pushWhenReady(String route, {int attempt = 0}) {
+  final ctx = rootNavigatorKey.currentContext;
+  if (ctx != null) {
+    ctx.push(route);
+    return;
+  }
+  // Router not mounted yet — retry on the next frames (max ~5s).
+  if (attempt >= 50) return;
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    Future<void>.delayed(const Duration(milliseconds: 100), () {
+      _pushWhenReady(route, attempt: attempt + 1);
+    });
+  });
 }
 
 Future<void> main() async {
@@ -84,6 +138,7 @@ Future<void> main() async {
   ]);
 
   timeago.setLocaleMessages('ar', timeago.ArMessages());
+  await initializeDateFormatting('ar', null);
 
   await Hive.initFlutter();
   await Future.wait([
@@ -113,33 +168,22 @@ Future<void> main() async {
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosInit = DarwinInitializationSettings();
     const initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
-    await _localNotifications.initialize(initSettings);
+    await _localNotifications.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: _onLocalNotificationTap,
+    );
 
     FirebaseMessaging.onMessage.listen(_showNotification);
     FirebaseMessaging.onMessageOpenedApp.listen(_routeFromMessage);
 
-    // Subscribe to the topics the WordPress plugin publishes to.
-    final messaging = FirebaseMessaging.instance;
-    await messaging.subscribeToTopic(ApiConstants.topicAll);
-    await messaging.subscribeToTopic(ApiConstants.topicBreaking);
-
-    // Register the device token with the backend (best-effort).
-    try {
-      final fcmToken = await messaging.getToken();
-      if (fcmToken != null) {
-        await DioClient().post(
-          ApiConstants.devicesRegister,
-          data: {
-            'token': fcmToken,
-            'platform': Platform.isIOS ? 'ios' : 'android',
-            'topics': [ApiConstants.topicAll, ApiConstants.topicBreaking],
-            'lang': 'ar',
-          },
-        );
-      }
-    } catch (_) {
-      // Backend may be unreachable or push disabled; ignore.
+    // Cold start: the app was launched by tapping a notification.
+    final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    if (initialMessage != null) {
+      _routeFromMessage(initialMessage);
     }
+
+    // Fire-and-forget: never block startup on network.
+    unawaited(_registerForPush());
   }
 
   runApp(

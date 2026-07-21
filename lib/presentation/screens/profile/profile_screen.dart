@@ -119,8 +119,54 @@ class _LoggedIn extends ConsumerWidget {
             if (context.mounted) context.go('/home');
           },
         ),
+        const Divider(height: 32),
+        _Tile(
+          icon: Icons.delete_forever_outlined,
+          label: 'حذف الحساب',
+          color: AppColors.error,
+          onTap: () => _confirmDelete(context, ref),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Text(
+            'حذف الحساب يزيل حسابك وبياناتك المرتبطة به نهائيًا ولا يمكن التراجع عنه.',
+            style: TextStyle(fontSize: 12, color: AppColors.secondary, height: 1.5),
+          ),
+        ),
       ],
     );
+  }
+
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('حذف الحساب'),
+        content: const Text(
+          'هل أنت متأكد من حذف حسابك؟ سيتم حذف بياناتك نهائيًا ولا يمكن استرجاعها.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('حذف نهائيًا'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final ok = await ref.read(authProvider.notifier).deleteAccount();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(ok ? 'تم حذف الحساب' : 'تعذّر حذف الحساب، حاول لاحقًا')),
+    );
+    if (ok) context.go('/home');
   }
 
   void _showEditSheet(BuildContext context, WidgetRef ref) {

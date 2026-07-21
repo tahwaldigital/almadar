@@ -52,5 +52,10 @@
 		<string>ar</string>
 		<string>en</string>
 	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+		<string>fetch</string>
+	</array>
 </dict>
 </plist>

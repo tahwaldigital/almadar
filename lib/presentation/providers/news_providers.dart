@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/constants/api_constants.dart';
 import '../../domain/entities/article.dart';
 import '../../domain/entities/category.dart';
 import 'providers.dart';
@@ -27,33 +28,40 @@ class LatestNewsNotifier extends StateNotifier<AsyncValue<List<Article>>> {
   Future<void> loadInitial() async {
     _page = 1;
     _hasMore = true;
+    _isLoadingMore = false; // ألغِ أي "تحميل مزيد" جارٍ حتى لا يُلحق نتائج قديمة.
     state = const AsyncValue.loading();
-    await _fetch(reset: true);
+    await _fetch(page: 1, reset: true);
   }
 
   Future<void> loadMore() async {
     if (!_hasMore || _isLoadingMore) return;
     _isLoadingMore = true;
-    _page++;
-    await _fetch(reset: false);
+    // لا نرفع رقم الصفحة إلا بعد نجاح الجلب، وإلا تُفقد صفحة كاملة عند الفشل.
+    final next = _page + 1;
+    final ok = await _fetch(page: next, reset: false);
+    if (ok) _page = next;
     _isLoadingMore = false;
   }
 
-  Future<void> _fetch({required bool reset}) async {
+  Future<bool> _fetch({required int page, required bool reset}) async {
     final useCase = _ref.read(getLatestNewsProvider);
-    final result = await useCase(page: _page);
-    result.fold(
+    final result = await useCase(page: page);
+    return result.fold(
       (failure) {
         if (reset) state = AsyncValue.error(failure.message, StackTrace.current);
+        return false;
       },
       (articles) {
-        if (articles.isEmpty || articles.length < 10) _hasMore = false;
+        if (articles.isEmpty || articles.length < ApiConstants.defaultPerPage) {
+          _hasMore = false;
+        }
         if (reset) {
           state = AsyncValue.data(articles);
         } else {
           final current = state.value ?? [];
           state = AsyncValue.data([...current, ...articles]);
         }
+        return true;
       },
     );
   }
@@ -97,33 +105,39 @@ class CategoryNewsNotifier extends StateNotifier<AsyncValue<List<Article>>> {
   Future<void> loadInitial() async {
     _page = 1;
     _hasMore = true;
+    _isLoadingMore = false; // ألغِ أي "تحميل مزيد" جارٍ حتى لا يُلحق نتائج قديمة.
     state = const AsyncValue.loading();
-    await _fetch(reset: true);
+    await _fetch(page: 1, reset: true);
   }
 
   Future<void> loadMore() async {
     if (!_hasMore || _isLoadingMore) return;
     _isLoadingMore = true;
-    _page++;
-    await _fetch(reset: false);
+    final next = _page + 1;
+    final ok = await _fetch(page: next, reset: false);
+    if (ok) _page = next;
     _isLoadingMore = false;
   }
 
-  Future<void> _fetch({required bool reset}) async {
+  Future<bool> _fetch({required int page, required bool reset}) async {
     final useCase = _ref.read(getNewsByCategoryProvider);
-    final result = await useCase(_categoryId, page: _page);
-    result.fold(
+    final result = await useCase(_categoryId, page: page);
+    return result.fold(
       (failure) {
         if (reset) state = AsyncValue.error(failure.message, StackTrace.current);
+        return false;
       },
       (articles) {
-        if (articles.isEmpty || articles.length < 10) _hasMore = false;
+        if (articles.isEmpty || articles.length < ApiConstants.defaultPerPage) {
+          _hasMore = false;
+        }
         if (reset) {
           state = AsyncValue.data(articles);
         } else {
           final current = state.value ?? [];
           state = AsyncValue.data([...current, ...articles]);
         }
+        return true;
       },
     );
   }

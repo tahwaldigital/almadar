@@ -1,6 +1,18 @@
 import '../../core/utils/html_parser_utils.dart';
 import '../../domain/entities/article.dart';
 
+/// المصدر قد يصل كنص ("وكالة") أو كائن ({name, url}). نستخرجه بأمان.
+({String name, String url}) _sourceFromJson(dynamic raw, {String urlFallback = ''}) {
+  if (raw is String) return (name: raw, url: urlFallback);
+  if (raw is Map<String, dynamic>) {
+    return (
+      name: raw['name'] as String? ?? '',
+      url: raw['url'] as String? ?? urlFallback,
+    );
+  }
+  return (name: '', url: urlFallback);
+}
+
 VideoInfo? _videoFromJson(Map<String, dynamic>? v) {
   if (v == null) return null;
   final url = v['url'] as String? ?? '';
@@ -34,6 +46,8 @@ class ArticleModel extends Article {
     required super.slug,
     required super.link,
     super.video,
+    super.source,
+    super.sourceUrl,
   });
 
   factory ArticleModel.fromWordPressJson(
@@ -144,6 +158,12 @@ class ArticleModel extends Article {
       slug: json['slug'] as String? ?? '',
       link: json['share_url'] as String? ?? json['link'] as String? ?? '',
       video: _videoFromJson(json['video'] as Map<String, dynamic>?),
+      source: _sourceFromJson(json['source'],
+              urlFallback: json['source_url'] as String? ?? '')
+          .name,
+      sourceUrl: _sourceFromJson(json['source'],
+              urlFallback: json['source_url'] as String? ?? '')
+          .url,
     );
   }
 
@@ -166,6 +186,8 @@ class ArticleModel extends Article {
         'isTrending': isTrending,
         'slug': slug,
         'link': link,
+        'source': source,
+        'source_url': sourceUrl,
         'video': video == null
             ? null
             : {
@@ -176,25 +198,52 @@ class ArticleModel extends Article {
               },
       };
 
-  factory ArticleModel.fromJson(Map<String, dynamic> json) => ArticleModel(
-        id: json['id'] as int,
-        title: json['title'] as String,
-        excerpt: json['excerpt'] as String,
-        content: json['content'] as String,
-        featuredImageUrl: json['featuredImageUrl'] as String,
-        authorName: json['authorName'] as String,
-        authorAvatarUrl: json['authorAvatarUrl'] as String,
-        authorId: json['authorId'] as int? ?? 0,
-        datePublished: json['datePublished'] as String,
-        categoryName: json['categoryName'] as String,
-        categoryId: json['categoryId'] as int,
-        tags: (json['tags'] as List).map((e) => e.toString()).toList(),
-        viewCount: json['viewCount'] as int,
-        commentCount: json['commentCount'] as int,
-        isBreaking: json['isBreaking'] as bool,
-        isTrending: json['isTrending'] as bool,
-        slug: json['slug'] as String,
-        link: json['link'] as String,
-        video: _videoFromJson(json['video'] as Map<String, dynamic>?),
-      );
+  /// يفكّ ترميز النسخة المخزّنة محليًا (Hive).
+  ///
+  /// القراءة دفاعية عمدًا: أي حقل مفقود أو بنوع مختلف كان يرمي استثناءً فيضيع
+  /// الكاش بالكامل بصمت، فتفشل القراءة دون اتصال.
+  factory ArticleModel.fromJson(Map<String, dynamic> json) {
+    String str(String key, [String fallback = '']) {
+      final v = json[key];
+      return v == null ? fallback : v.toString();
+    }
+
+    int intg(String key) {
+      final v = json[key];
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      return int.tryParse(v?.toString() ?? '') ?? 0;
+    }
+
+    bool flag(String key) {
+      final v = json[key];
+      return v == true || v == 1 || v == '1' || v == 'true';
+    }
+
+    return ArticleModel(
+      id: intg('id'),
+      title: str('title'),
+      excerpt: str('excerpt'),
+      content: str('content'),
+      featuredImageUrl: str('featuredImageUrl'),
+      authorName: str('authorName'),
+      authorAvatarUrl: str('authorAvatarUrl'),
+      authorId: intg('authorId'),
+      datePublished: str('datePublished'),
+      categoryName: str('categoryName'),
+      categoryId: intg('categoryId'),
+      tags: (json['tags'] as List?)?.map((e) => e.toString()).toList() ?? const [],
+      viewCount: intg('viewCount'),
+      commentCount: intg('commentCount'),
+      isBreaking: flag('isBreaking'),
+      isTrending: flag('isTrending'),
+      slug: str('slug'),
+      link: str('link'),
+      source: str('source'),
+      sourceUrl: str('source_url'),
+      video: _videoFromJson(
+        (json['video'] as Map?)?.cast<String, dynamic>(),
+      ),
+    );
+  }
 }

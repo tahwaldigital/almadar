@@ -274,13 +274,6 @@ class _FeaturedCard extends StatelessWidget {
                           AppDateUtils.timeAgo(article.datePublished),
                           style: AppTypography.labelSm.copyWith(color: Colors.white70),
                         ),
-                        const SizedBox(width: 12),
-                        const Icon(Icons.visibility_outlined, size: 14, color: Colors.white70),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${article.viewCount} مشاهدة',
-                          style: AppTypography.labelSm.copyWith(color: Colors.white70),
-                        ),
                       ],
                     ),
                   ],

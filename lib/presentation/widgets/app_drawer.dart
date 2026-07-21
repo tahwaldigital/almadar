@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
+import '../../core/constants/legal_content.dart';
+import '../../core/utils/share_utils.dart';
+import '../providers/admin_providers.dart';
 import 'app_logo.dart';
+import 'developer_credit.dart';
 
-class AppDrawer extends StatelessWidget {
+class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isAdmin = ref.watch(isAdminProvider);
     return Drawer(
       child: SafeArea(
         child: Column(
@@ -35,8 +41,36 @@ class AppDrawer extends StatelessWidget {
                   _item(context, Icons.bookmark_outline, 'المحفوظات', '/bookmarks', go: true),
                   const Divider(),
                   _item(context, Icons.settings_outlined, 'الإعدادات', '/settings', go: true),
+                  if (isAdmin) ...[
+                    const Divider(),
+                    _item(context, Icons.dashboard_customize_outlined,
+                        'لوحة التحرير', '/admin'),
+                  ],
+                  const Divider(),
+                  _item(context, Icons.share_outlined, 'وسائل التواصل', '/social'),
+                  ListTile(
+                    leading: const Icon(Icons.ios_share_rounded, color: AppColors.primary),
+                    title: Text('مشاركة التطبيق', style: AppTypography.bodyMd),
+                    onTap: () {
+                      Navigator.pop(context);
+                      ShareUtils.shareApp();
+                    },
+                  ),
+                  const Divider(),
+                  _item(context, Icons.info_outline_rounded, 'من نحن', '/info/${LegalContent.keyAbout}'),
+                  _item(context, Icons.mail_outline_rounded, 'اتصل بنا', '/contact'),
+                  _item(context, Icons.privacy_tip_outlined, 'سياسة الخصوصية', '/info/${LegalContent.keyPrivacy}'),
+                  _item(context, Icons.description_outlined, 'الشروط والأحكام', '/info/${LegalContent.keyTerms}'),
+                  _item(context, Icons.gavel_rounded, 'السياسة التحريرية', '/info/${LegalContent.keyEditorial}'),
+                  _item(context, Icons.fact_check_outlined, 'سياسة التصحيح', '/info/${LegalContent.keyCorrection}'),
                 ],
               ),
+            ),
+            // حقوق البرمجة في تذييل القائمة.
+            const Divider(height: 1),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Center(child: DeveloperCredit()),
             ),
           ],
         ),

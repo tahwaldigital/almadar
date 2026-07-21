@@ -126,17 +126,6 @@ class NewsCardHorizontal extends ConsumerWidget {
                             color: AppColors.secondary,
                           ),
                         ),
-                        if (article.viewCount > 0) ...[
-                          const SizedBox(width: 12),
-                          Icon(Icons.visibility_outlined, size: 12, color: AppColors.secondary),
-                          const SizedBox(width: 4),
-                          Text(
-                            _formatCount(article.viewCount),
-                            style: AppTypography.labelSm.copyWith(
-                              color: AppColors.secondary,
-                            ),
-                          ),
-                        ],
                         if (showBookmark) ...[
                           const Spacer(),
                           SizedBox(
@@ -169,10 +158,5 @@ class NewsCardHorizontal extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  String _formatCount(int count) {
-    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}ألف';
-    return count.toString();
   }
 }
