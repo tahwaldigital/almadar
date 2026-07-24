@@ -18,7 +18,9 @@ if (keyPropsFile.exists()) {
 
 android {
     namespace = "com.almadar.almadar_news"
-    compileSdk = flutter.compileSdkVersion
+    // مثبّتة صراحةً على Android 15 (API 35) لاستيفاء شرط Google Play
+    // (targetSdk ضمن سنة من أحدث إصدار). لا تعتمد على القيمة الافتراضية لفلاتر.
+    compileSdk = 35
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -43,7 +45,7 @@ android {
     defaultConfig {
         applicationId = "almadar.news"
         minSdk        = flutter.minSdkVersion
-        targetSdk     = flutter.targetSdkVersion
+        targetSdk     = 35 // Android 15 — شرط Google Play اعتبارًا من 31 أغسطس 2026
         versionCode   = flutter.versionCode
         versionName   = flutter.versionName
     }
