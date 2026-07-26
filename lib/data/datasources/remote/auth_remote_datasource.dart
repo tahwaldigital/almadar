@@ -12,6 +12,9 @@ abstract class AuthRemoteDataSource {
   Future<bool> validateToken();
   Future<UserModel> getMe();
   Future<UserModel> updateMe({String? name, String? bio, String? password});
+  Future<void> deleteAccount();
+  Future<UserModel> verifyEmail(String email, String code);
+  Future<void> resendCode(String email);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -89,6 +92,52 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<void> logout() async {
     await _secureStorage.delete(key: ApiConstants.tokenKey);
     await _secureStorage.delete(key: ApiConstants.refreshKey);
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    try {
+      await _dio.post(ApiConstants.authDelete);
+    } on AuthException {
+      rethrow;
+    } catch (e) {
+      throw AuthException(message: e.toString());
+    } finally {
+      // امسح الجلسة محليًا في كل الأحوال بعد طلب الحذف.
+      await _secureStorage.delete(key: ApiConstants.tokenKey);
+      await _secureStorage.delete(key: ApiConstants.refreshKey);
+    }
+  }
+
+  @override
+  Future<UserModel> verifyEmail(String email, String code) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.authVerifyEmail,
+        data: {'email': email, 'code': code},
+      );
+      final d = _data(response.data);
+      final token = await _secureStorage.read(key: ApiConstants.tokenKey) ?? '';
+      return UserModel.fromJson(
+        (d['user'] as Map?)?.cast<String, dynamic>() ?? const {},
+        token: token,
+      );
+    } on AuthException {
+      rethrow;
+    } catch (e) {
+      throw AuthException(message: 'الرمز غير صحيح أو منتهي الصلاحية');
+    }
+  }
+
+  @override
+  Future<void> resendCode(String email) async {
+    try {
+      await _dio.post(ApiConstants.authResendCode, data: {'email': email});
+    } on AuthException {
+      rethrow;
+    } catch (e) {
+      throw AuthException(message: 'تعذّر إعادة إرسال الرمز، حاول بعد قليل');
+    }
   }
 
   @override

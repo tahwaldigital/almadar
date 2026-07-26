@@ -2,7 +2,10 @@ class ApiConstants {
   ApiConstants._();
 
   // Site + custom plugin namespace (Almadar Mobile API).
-  static const String siteUrl = 'https://almadar-news.com';
+  // IMPORTANT: use the canonical www host. The server 301-redirects non-www → www,
+  // and that redirect turns POST (register/login) into GET and drops the body,
+  // which made account creation & login fail. Hitting www directly avoids it.
+  static const String siteUrl = 'https://www.almadr-news.com';
 
   // The site uses plain permalinks, so the working REST form is ?rest_route=.
   // If you enable pretty permalinks, switch apiBase to '$siteUrl/wp-json/almadar/v1'.
@@ -33,10 +36,21 @@ class ApiConstants {
   static const String authValidate = '$apiBase/auth/validate';
   static const String authSocial = '$apiBase/auth/social';
   static const String authForgotPassword = '$apiBase/auth/forgot-password';
+  static const String authDelete = '$apiBase/auth/delete';
+  static const String authVerifyEmail = '$apiBase/auth/verify-email';
+  static const String authResendCode = '$apiBase/auth/resend-code';
 
   // ── Devices / notifications ────────────────────────────────────────
   static const String devicesRegister = '$apiBase/devices/register';
   static const String devicesUnregister = '$apiBase/devices/unregister';
+  static const String notificationsFeed = '$apiBase/notifications/feed';
+
+  // ── Admin / publishing (تتطلب مستخدمًا بصلاحية نشر) ────────────────
+  // ينشئ منشورًا في ووردبريس. عند is_breaking=true يجب أن يقوم الخادم
+  // (إضافة المدار/Novamira) بإرسال إشعار الدفع لموضوع breaking. لا يُرسَل
+  // الدفع من التطبيق أبدًا (مفتاح FCM السري يبقى على الخادم فقط).
+  static const String adminCreatePost = '$apiBase/admin/posts';
+  static const String adminUploadMedia = '$apiBase/admin/media';
 
   // ── FCM topics (must match the WordPress plugin settings) ──────────
   static const String topicAll = 'news_all';

@@ -5,11 +5,17 @@ import '../../domain/entities/article.dart';
 import '../../domain/entities/category.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
+import '../providers/auth_providers.dart';
+import '../screens/admin/admin_dashboard_screen.dart';
+import '../screens/admin/compose_article_screen.dart';
+import '../screens/auth/verify_email_screen.dart';
 import '../screens/author/author_screen.dart';
 import '../screens/bookmarks/bookmarks_screen.dart';
 import '../screens/categories/categories_screen.dart';
 import '../screens/category/category_screen.dart';
+import '../screens/contact/contact_screen.dart';
 import '../screens/home/home_screen.dart';
+import '../screens/info/info_page_screen.dart';
 import '../screens/most_viewed/most_viewed_screen.dart';
 import '../screens/news_detail/news_detail_screen.dart';
 import '../screens/notifications/notifications_screen.dart';
@@ -17,11 +23,20 @@ import '../screens/page/page_viewer_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/search/search_screen.dart';
 import '../screens/settings/settings_screen.dart';
+import '../screens/social/social_media_screen.dart';
 import '../screens/videos/videos_screen.dart';
 import '../widgets/main_scaffold.dart';
 
 /// Global navigator key so push notifications can deep-link into the app.
 final rootNavigatorKey = GlobalKey<NavigatorState>();
+
+/// يُخطر الموجّه بإعادة تقييم الحماية عند تغيّر حالة المصادقة (استعادة الجلسة
+/// عند الإقلاع، تسجيل الدخول/الخروج) — يمنع طرد المشرف الشرعي أثناء التحميل.
+class _AuthRefreshNotifier extends ChangeNotifier {
+  _AuthRefreshNotifier(Ref ref) {
+    ref.listen(authProvider, (_, __) => notifyListeners());
+  }
+}
 
 /// انتقال صفحة موحّد: تلاشٍ + انزلاق رأسي خفيف (محايد الاتجاه — آمن لـ RTL).
 CustomTransitionPage<void> _page(GoRouterState state, Widget child) {
@@ -49,6 +64,22 @@ final routerProvider = Provider<GoRouter>((ref) {
     navigatorKey: rootNavigatorKey,
     initialLocation: '/home',
     debugLogDiagnostics: false,
+    refreshListenable: _AuthRefreshNotifier(ref),
+    // حارس لوحة التحرير: يمنع الوصول عبر الروابط العميقة لغير المصرّح لهم.
+    // هذا حاجز واجهة فقط — التحقق الفعلي مسؤولية الخادم في admin/posts.
+    redirect: (context, state) {
+      if (state.matchedLocation.startsWith('/admin')) {
+        final auth = ref.read(authProvider);
+        // أثناء استعادة الجلسة عند الإقلاع لا نطرد؛ ننتظر حتى تُحسم الحالة
+        // ثم يُعاد التقييم تلقائيًا عبر refreshListenable.
+        if (auth.status == AuthStatus.initial ||
+            auth.status == AuthStatus.loading) {
+          return null;
+        }
+        if (!(auth.user?.canPublish ?? false)) return '/home';
+      }
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/login',
@@ -59,6 +90,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/register',
         name: 'register',
         pageBuilder: (context, state) => _page(state, const RegisterScreen()),
+      ),
+      GoRoute(
+        path: '/verify-email',
+        name: 'verify-email',
+        pageBuilder: (context, state) =>
+            _page(state, VerifyEmailScreen(email: state.extra as String? ?? '')),
       ),
       ShellRoute(
         builder: (context, state, child) => MainScaffold(child: child),
@@ -145,6 +182,36 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/profile',
         name: 'profile',
         pageBuilder: (context, state) => _page(state, const ProfileScreen()),
+      ),
+      GoRoute(
+        path: '/contact',
+        name: 'contact',
+        pageBuilder: (context, state) => _page(state, const ContactScreen()),
+      ),
+      GoRoute(
+        path: '/social',
+        name: 'social',
+        pageBuilder: (context, state) => _page(state, const SocialMediaScreen()),
+      ),
+      GoRoute(
+        path: '/admin',
+        name: 'admin',
+        pageBuilder: (context, state) =>
+            _page(state, const AdminDashboardScreen()),
+      ),
+      GoRoute(
+        path: '/admin/compose',
+        name: 'admin-compose',
+        pageBuilder: (context, state) =>
+            _page(state, const ComposeArticleScreen()),
+      ),
+      GoRoute(
+        path: '/info/:key',
+        name: 'info',
+        pageBuilder: (context, state) {
+          final key = state.pathParameters['key'] ?? '';
+          return _page(state, InfoPageScreen(pageKey: key));
+        },
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

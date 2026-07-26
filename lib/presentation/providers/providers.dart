@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/network/dio_client.dart';
 import '../../data/datasources/local/news_local_datasource.dart';
+import '../../data/datasources/remote/admin_remote_datasource.dart';
 import '../../data/datasources/remote/auth_remote_datasource.dart';
 import '../../data/datasources/remote/content_remote_datasource.dart';
 import '../../data/datasources/remote/news_remote_datasource.dart';
@@ -52,6 +53,10 @@ final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
     ref.read(dioClientProvider),
     ref.read(secureStorageProvider),
   );
+});
+
+final adminRemoteDataSourceProvider = Provider<AdminRemoteDataSource>((ref) {
+  return AdminRemoteDataSource(ref.read(dioClientProvider));
 });
 
 // ── Repositories ─────────────────────────────────────────────────────────────

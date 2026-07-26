@@ -65,10 +65,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         titleSpacing: 16,
         title: Row(
           children: [
-            const Icon(Icons.menu_rounded, color: AppColors.primary),
+            const Icon(Icons.search_rounded, color: AppColors.primary),
             const SizedBox(width: 12),
             Text(
-              'المدار الإخبارية',
+              'بحث',
               style: AppTypography.headlineLgMobile.copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w700,
@@ -156,39 +156,58 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
           // If no search query — show explore view
           if (!isSearching) ...[
-            // Trending tags
+            // Trending tags — مشتقّة من الأخبار الرائجة فعليًا (لا محتوى ثابت).
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.containerMargin),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              child: Consumer(
+                builder: (context, ref, _) {
+                  final trendingAsync = ref.watch(trendingNewsProvider);
+                  final tags = trendingAsync.maybeWhen(
+                    data: (articles) {
+                      final seen = <String>{};
+                      for (final a in articles) {
+                        for (final t in a.tags) {
+                          final tag = t.trim();
+                          if (tag.isNotEmpty) seen.add(tag);
+                        }
+                      }
+                      return seen.take(8).toList();
+                    },
+                    orElse: () => const <String>[],
+                  );
+                  if (tags.isEmpty) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.containerMargin),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.trending_up_rounded, color: AppColors.primary, size: 18),
-                        const SizedBox(width: 6),
-                        Text('الأكثر تداولاً', style: AppTypography.headlineMd.copyWith(fontWeight: FontWeight.w700)),
+                        Row(
+                          children: [
+                            const Icon(Icons.trending_up_rounded, color: AppColors.primary, size: 18),
+                            const SizedBox(width: 6),
+                            Text('الأكثر تداولاً',
+                                style: AppTypography.headlineMd.copyWith(fontWeight: FontWeight.w700)),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.stackMd),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: tags
+                              .map((tag) => _TrendingTag(
+                                    tag: '#$tag',
+                                    onTap: () {
+                                      _searchController.text = tag;
+                                      _performSearch(tag);
+                                      setState(() {});
+                                    },
+                                  ))
+                              .toList(),
+                        ),
+                        const SizedBox(height: AppSpacing.sectionGap),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.stackMd),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        '#كأس_العالم', '#الذكاء_الاصطناعي', '#قمة_المناخ',
-                        '#الأمن_السيبراني', '#استكشاف_الفضاء',
-                      ].map((tag) => _TrendingTag(
-                        tag: tag,
-                        onTap: () {
-                          _searchController.text = tag.substring(1);
-                          _performSearch(_searchController.text);
-                          setState(() {});
-                        },
-                      )).toList(),
-                    ),
-                    const SizedBox(height: AppSpacing.sectionGap),
-                  ],
-                ),
+                  );
+                },
               ),
             ),
 

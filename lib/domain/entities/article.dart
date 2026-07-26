@@ -43,7 +43,16 @@ class Article extends Equatable {
   final String link;
   final VideoInfo? video;
 
+  /// اسم المصدر الأصلي للخبر المنقول (مثال: "وكالة الأنباء"). فارغ للأخبار الأصلية.
+  final String source;
+
+  /// رابط الخبر الأصلي عند المصدر (اختياري).
+  final String sourceUrl;
+
   bool get hasVideo => video != null;
+
+  /// هل الخبر منقول من مصدر خارجي؟
+  bool get hasSource => source.trim().isNotEmpty;
 
   const Article({
     required this.id,
@@ -65,6 +74,8 @@ class Article extends Equatable {
     required this.slug,
     required this.link,
     this.video,
+    this.source = '',
+    this.sourceUrl = '',
   });
 
   @override

@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../providers/providers.dart';
+import '../../providers/auth_providers.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -19,6 +19,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -29,21 +30,30 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _register() async {
+    if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
-    final authRepo = ref.read(authRepositoryProvider);
-    final result = await authRepo.register(
-      _nameController.text.trim(),
-      _emailController.text.trim(),
-      _passwordController.text,
-    );
-    result.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(f.message)),
-      ),
-      (_) {
-        if (mounted) context.go('/home');
-      },
-    );
+    FocusScope.of(context).unfocus();
+    setState(() => _isSubmitting = true);
+    final email = _emailController.text.trim();
+    final res = await ref.read(authProvider.notifier).register(
+          _nameController.text.trim(),
+          email,
+          _passwordController.text,
+        );
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+    if (!res.ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(res.error ?? 'فشل إنشاء الحساب')),
+      );
+      return;
+    }
+    // الحساب أُنشئ؛ لو البريد غير مؤكَّد وجّه لشاشة إدخال الكود.
+    if (!res.verified) {
+      context.push('/verify-email', extra: email);
+    } else {
+      context.go('/home');
+    }
   }
 
   @override
@@ -110,8 +120,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     prefixIcon: Icon(Icons.email_outlined),
                   ),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'يرجى إدخال البريد الإلكتروني';
-                    if (!v.contains('@')) return 'بريد إلكتروني غير صحيح';
+                    if (v == null || v.trim().isEmpty) {
+                      return 'يرجى إدخال البريد الإلكتروني';
+                    }
+                    final email = v.trim();
+                    final valid = RegExp(
+                      r'^[\w.+-]+@[\w-]+(\.[\w-]+)+$',
+                    ).hasMatch(email);
+                    if (!valid) return 'بريد إلكتروني غير صحيح';
                     return null;
                   },
                 ),
@@ -140,14 +156,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   width: double.infinity,
                   height: 54,
                   child: ElevatedButton(
-                    onPressed: _register,
-                    child: Text(
-                      'إنشاء الحساب',
-                      style: AppTypography.labelMd.copyWith(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
+                    // معطّل أثناء الإرسال لمنع الضغط المزدوج وإنشاء حسابات مكرّرة.
+                    onPressed: _isSubmitting ? null : _register,
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : Text(
+                            'إنشاء الحساب',
+                            style: AppTypography.labelMd.copyWith(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.stackLg),

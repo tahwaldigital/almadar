@@ -5,10 +5,12 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_typography.dart';
-import '../../providers/content_providers.dart';
+import '../../../core/constants/legal_content.dart';
+import '../../../core/utils/share_utils.dart';
 import '../../providers/settings_providers.dart';
 import '../../providers/theme_providers.dart';
 import '../../widgets/app_logo.dart';
+import '../../widgets/developer_credit.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -16,27 +18,6 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = ref.watch(isDarkModeProvider);
-
-    Future<void> openConfigPage(String key, String title) async {
-      try {
-        final config = await ref.read(appConfigProvider.future);
-        final pages = config['pages'] as Map<String, dynamic>?;
-        final page = pages?[key] as Map<String, dynamic>?;
-        final pageId = page?['page_id'] as int? ?? 0;
-        if (!context.mounted) return;
-        if (pageId > 0) {
-          context.push('/page/$pageId', extra: title);
-        } else {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('الصفحة غير متوفرة حالياً')));
-        }
-      } catch (_) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('تعذّر فتح الصفحة')));
-        }
-      }
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -72,21 +53,62 @@ class SettingsScreen extends ConsumerWidget {
             label: 'حجم الخط',
             onTap: () => _showFontSizeSheet(context, ref),
           ),
+
+          const _SectionHeader(title: 'المعلومات'),
           _SettingsTile(
             icon: Icons.info_outline_rounded,
-            label: 'عن التطبيق',
-            onTap: () => openConfigPage('about', 'عن التطبيق'),
+            label: 'من نحن',
+            onTap: () => context.push('/info/${LegalContent.keyAbout}'),
           ),
+          _SettingsTile(
+            icon: Icons.mail_outline_rounded,
+            label: 'اتصل بنا',
+            onTap: () => context.push('/contact'),
+          ),
+
+          const _SectionHeader(title: 'تواصل ومشاركة'),
+          _SettingsTile(
+            icon: Icons.share_outlined,
+            label: 'وسائل التواصل',
+            onTap: () => context.push('/social'),
+          ),
+          _SettingsTile(
+            icon: Icons.ios_share_rounded,
+            label: 'مشاركة التطبيق',
+            onTap: () => ShareUtils.shareApp(),
+          ),
+
+          const _SectionHeader(title: 'السياسات القانونية'),
           _SettingsTile(
             icon: Icons.privacy_tip_outlined,
             label: 'سياسة الخصوصية',
-            onTap: () => openConfigPage('privacy_policy', 'سياسة الخصوصية'),
+            onTap: () => context.push('/info/${LegalContent.keyPrivacy}'),
+          ),
+          _SettingsTile(
+            icon: Icons.description_outlined,
+            label: 'الشروط والأحكام',
+            onTap: () => context.push('/info/${LegalContent.keyTerms}'),
+          ),
+          _SettingsTile(
+            icon: Icons.gavel_rounded,
+            label: 'السياسة التحريرية',
+            onTap: () => context.push('/info/${LegalContent.keyEditorial}'),
+          ),
+          _SettingsTile(
+            icon: Icons.fact_check_outlined,
+            label: 'سياسة التصحيح',
+            onTap: () => context.push('/info/${LegalContent.keyCorrection}'),
           ),
           const SizedBox(height: AppSpacing.sectionGap),
           Center(
             child: Column(
               children: [
-                const AppLogo(height: 28),
+                // ضغطة مطوّلة على الشعار = دخول المحرّرين (مخفي عن القرّاء،
+                // فتسجيل الدخول غير معروض لكن لوحة التحرير تظل متاحة للإدارة).
+                GestureDetector(
+                  onLongPress: () => context.push('/login'),
+                  child: const AppLogo(height: 28),
+                ),
                 const SizedBox(height: 8),
                 FutureBuilder<PackageInfo>(
                   future: PackageInfo.fromPlatform(),
@@ -98,6 +120,8 @@ class SettingsScreen extends ConsumerWidget {
                     );
                   },
                 ),
+                const SizedBox(height: 14),
+                const DeveloperCredit(),
               ],
             ),
           ),
