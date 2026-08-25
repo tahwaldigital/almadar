@@ -1,15 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/network/dio_client.dart';
 import '../../data/datasources/local/news_local_datasource.dart';
-import '../../data/datasources/remote/admin_remote_datasource.dart';
-import '../../data/datasources/remote/auth_remote_datasource.dart';
 import '../../data/datasources/remote/content_remote_datasource.dart';
 import '../../data/datasources/remote/news_remote_datasource.dart';
-import '../../data/repositories/auth_repository_impl.dart';
 import '../../data/repositories/news_repository_impl.dart';
-import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/news_repository.dart';
 import '../../domain/usecases/get_breaking_news.dart';
 import '../../domain/usecases/get_categories.dart';
@@ -17,7 +12,6 @@ import '../../domain/usecases/get_latest_news.dart';
 import '../../domain/usecases/get_news_by_category.dart';
 import '../../domain/usecases/get_related_posts.dart';
 import '../../domain/usecases/get_trending_news.dart';
-import '../../domain/usecases/login_user.dart';
 import '../../domain/usecases/search_news.dart';
 import '../../domain/usecases/toggle_saved_post.dart';
 
@@ -26,14 +20,7 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError('Initialize SharedPreferences in main()');
 });
 
-final secureStorageProvider = Provider<FlutterSecureStorage>(
-  (_) => const FlutterSecureStorage(),
-);
-
-final dioClientProvider = Provider<DioClient>((ref) {
-  final storage = ref.read(secureStorageProvider);
-  return DioClient(secureStorage: storage);
-});
+final dioClientProvider = Provider<DioClient>((ref) => DioClient());
 
 // ── DataSources ─────────────────────────────────────────────────────────────
 final newsRemoteDataSourceProvider = Provider<NewsRemoteDataSource>((ref) {
@@ -48,29 +35,11 @@ final contentRemoteDataSourceProvider = Provider<ContentRemoteDataSource>((ref) 
   return ContentRemoteDataSource(ref.read(dioClientProvider));
 });
 
-final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
-  return AuthRemoteDataSourceImpl(
-    ref.read(dioClientProvider),
-    ref.read(secureStorageProvider),
-  );
-});
-
-final adminRemoteDataSourceProvider = Provider<AdminRemoteDataSource>((ref) {
-  return AdminRemoteDataSource(ref.read(dioClientProvider));
-});
-
 // ── Repositories ─────────────────────────────────────────────────────────────
 final newsRepositoryProvider = Provider<NewsRepository>((ref) {
   return NewsRepositoryImpl(
     ref.read(newsRemoteDataSourceProvider),
     ref.read(newsLocalDataSourceProvider),
-  );
-});
-
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepositoryImpl(
-    ref.read(authRemoteDataSourceProvider),
-    ref.read(secureStorageProvider),
   );
 });
 
@@ -98,7 +67,4 @@ final searchNewsProvider = Provider(
 );
 final toggleSavedPostProvider = Provider(
   (ref) => ToggleSavedPost(ref.read(newsRepositoryProvider)),
-);
-final loginUserProvider = Provider(
-  (ref) => LoginUser(ref.read(authRepositoryProvider)),
 );

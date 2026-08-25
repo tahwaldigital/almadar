@@ -20,10 +20,6 @@ class CacheFailure extends Failure {
   const CacheFailure([super.message = 'خطأ في قراءة البيانات المحلية']);
 }
 
-class AuthFailure extends Failure {
-  const AuthFailure([super.message = 'خطأ في المصادقة، يرجى تسجيل الدخول مجدداً']);
-}
-
 class NotFoundFailure extends Failure {
   const NotFoundFailure([super.message = 'المحتوى غير موجود']);
 }

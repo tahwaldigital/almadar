@@ -1,7 +1,8 @@
 # دليل رفع تطبيق "المدار الإخبارية" على App Store
 
 تطبيق Flutter لقراءة الأخبار من موقع WordPress (`almadar-news.com`) عبر REST API مخصص.
-**لا يستخدم إشعارات ولا Firebase.** التسجيل اختياري (فيه وضع ضيف)، ويتيح كتابة تعليقات.
+**يستخدم Firebase Cloud Messaging لإشعارات الأخبار العاجلة.**
+**لا يتطلب تسجيل دخول ولا إنشاء حساب** — كل المحتوى متاح فور فتح التطبيق.
 
 هذا الدليل لمن سيرفع التطبيق من جهاز **Mac**.
 
@@ -28,8 +29,25 @@ flutter build ios   # تجربة بناء
 3. اختر **Team** الخاص بك.
 4. تأكد أن **Bundle Identifier** = `com.almadar.almadarNews`.
 
-> **لا تضف** Push Notifications ولا Background Modes — التطبيق لا يستخدم إشعارات،
-> وإضافتها بدون استخدام فعلي قد تسبب رفضاً من أبل.
+5. **أضف** القدرات التالية من **+ Capability** (إلزامية للإشعارات):
+   - **Push Notifications**
+   - **Background Modes** ← فعّل **Remote notifications**
+
+> ⚠️ بدون هاتين القدرتين لن يصدر النظام رمز APNs، ولن تصل أي إشعارات على iOS
+> مهما كان الكود سليمًا.
+
+### إعداد APNs في Firebase (مطلوب مرة واحدة)
+1. **Apple Developer ← Certificates, Identifiers & Profiles ← Keys** ← أنشئ مفتاحًا
+   وفعّل **Apple Push Notifications service (APNs)** ونزّل ملف `.p8`
+   (يُنزَّل مرة واحدة فقط — احفظه خارج git). سجّل **Key ID** و **Team ID**.
+2. **Identifiers ← `com.almadar.almadarNews`** ← فعّل **Push Notifications** واحفظ.
+3. **Firebase Console ← مشروع `almadar-b09df` ← Project Settings ← Cloud Messaging
+   ← Apple app configuration** ← ارفع ملف `.p8` مع الـ Key ID و Team ID.
+4. جدّد **Provisioning Profile** بعد تفعيل القدرة، ثم أعد البناء.
+
+> `ios/Runner/Runner.entitlements` مضبوط على `aps-environment = production` وهو
+> الصحيح لـ TestFlight و App Store. غيّره مؤقتًا إلى `development` فقط إن أردت
+> الاختبار بنسخة debug من Xcode مباشرة.
 
 ## 3) رقم الإصدار
 في `pubspec.yaml`: `1.0.0+1` — زِد رقم الـ Build (`+1`) مع كل رفع جديد.

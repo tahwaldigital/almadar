@@ -1,4 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -47,8 +48,9 @@ class NotificationPrefsNotifier extends StateNotifier<NotificationPrefs> {
       } else {
         await fm.unsubscribeFromTopic(topic);
       }
-    } catch (_) {
-      // Firebase may be unavailable in dev; ignore.
+    } catch (e) {
+      // على iOS يفشل هذا إن لم يتوفّر رمز APNs بعد؛ نُظهره في السجل بدل ابتلاعه.
+      debugPrint('[push] تعذّر تعديل الاشتراك في "$topic": $e');
     }
   }
 }

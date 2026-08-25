@@ -28,29 +28,10 @@ class ApiConstants {
   static const String authors = '$apiBase/authors';
   static const String comments = '$apiBase/comments';
 
-  // ── Auth endpoints ─────────────────────────────────────────────────
-  static const String authLogin = '$apiBase/auth/login';
-  static const String authRegister = '$apiBase/auth/register';
-  static const String authRefresh = '$apiBase/auth/refresh';
-  static const String authMe = '$apiBase/auth/me';
-  static const String authValidate = '$apiBase/auth/validate';
-  static const String authSocial = '$apiBase/auth/social';
-  static const String authForgotPassword = '$apiBase/auth/forgot-password';
-  static const String authDelete = '$apiBase/auth/delete';
-  static const String authVerifyEmail = '$apiBase/auth/verify-email';
-  static const String authResendCode = '$apiBase/auth/resend-code';
-
   // ── Devices / notifications ────────────────────────────────────────
   static const String devicesRegister = '$apiBase/devices/register';
   static const String devicesUnregister = '$apiBase/devices/unregister';
   static const String notificationsFeed = '$apiBase/notifications/feed';
-
-  // ── Admin / publishing (تتطلب مستخدمًا بصلاحية نشر) ────────────────
-  // ينشئ منشورًا في ووردبريس. عند is_breaking=true يجب أن يقوم الخادم
-  // (إضافة المدار/Novamira) بإرسال إشعار الدفع لموضوع breaking. لا يُرسَل
-  // الدفع من التطبيق أبدًا (مفتاح FCM السري يبقى على الخادم فقط).
-  static const String adminCreatePost = '$apiBase/admin/posts';
-  static const String adminUploadMedia = '$apiBase/admin/media';
 
   // ── FCM topics (must match the WordPress plugin settings) ──────────
   static const String topicAll = 'news_all';
@@ -61,9 +42,6 @@ class ApiConstants {
   static const int defaultPerPage = 10;
 
   // ── Local storage keys ─────────────────────────────────────────────
-  static const String tokenKey = 'jwt_token';
-  static const String refreshKey = 'jwt_refresh';
-  static const String userKey = 'user_data';
   static const String savedPostsBox = 'saved_posts';
   static const String cachedPostsBox = 'cached_posts';
   static const String categoriesBox = 'categories';

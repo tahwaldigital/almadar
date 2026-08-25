@@ -6,7 +6,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/constants/legal_content.dart';
 import '../../core/utils/share_utils.dart';
-import '../providers/admin_providers.dart';
 import 'app_logo.dart';
 import 'developer_credit.dart';
 
@@ -15,7 +14,6 @@ class AppDrawer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isAdmin = ref.watch(isAdminProvider);
     return Drawer(
       child: SafeArea(
         child: Column(
@@ -41,19 +39,18 @@ class AppDrawer extends ConsumerWidget {
                   _item(context, Icons.bookmark_outline, 'المحفوظات', '/bookmarks', go: true),
                   const Divider(),
                   _item(context, Icons.settings_outlined, 'الإعدادات', '/settings', go: true),
-                  if (isAdmin) ...[
-                    const Divider(),
-                    _item(context, Icons.dashboard_customize_outlined,
-                        'لوحة التحرير', '/admin'),
-                  ],
                   const Divider(),
                   _item(context, Icons.share_outlined, 'وسائل التواصل', '/social'),
                   ListTile(
                     leading: const Icon(Icons.ios_share_rounded, color: AppColors.primary),
                     title: Text('مشاركة التطبيق', style: AppTypography.bodyMd),
-                    onTap: () {
+                    onTap: () async {
+                      // سياق الـ Drawer يُهدم بعد الإغلاق، وعرض ورقة المشاركة
+                      // من عنصر يُهدم يفشل بصمت على iOS. نلتقط سياق الصفحة
+                      // المستضيفة أولًا، ثم نغلق القائمة، ثم نشارك.
+                      final hostContext = Navigator.of(context).context;
                       Navigator.pop(context);
-                      ShareUtils.shareApp();
+                      await ShareUtils.shareApp(hostContext);
                     },
                   ),
                   const Divider(),

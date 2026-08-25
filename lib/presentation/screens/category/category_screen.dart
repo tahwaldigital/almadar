@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart';
+import '../../../core/utils/share_utils.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_typography.dart';
@@ -409,7 +409,7 @@ class _CategoryNewsItem extends ConsumerWidget {
                           ),
                           const SizedBox(width: 8),
                           GestureDetector(
-                            onTap: () => Share.share(article.link),
+                            onTap: () => ShareUtils.share(context, article.link),
                             child: Icon(Icons.share_outlined, size: 18, color: AppColors.secondary),
                           ),
                         ],

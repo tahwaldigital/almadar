@@ -134,7 +134,7 @@ class SocialMediaScreen extends ConsumerWidget {
             const Divider(),
             const SizedBox(height: AppSpacing.gutter),
             FilledButton.icon(
-              onPressed: () => ShareUtils.shareApp(),
+              onPressed: () => ShareUtils.shareApp(context),
               icon: const Icon(Icons.share_rounded, size: 20),
               label: const Text('مشاركة التطبيق'),
               style: FilledButton.styleFrom(

@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart';
+import '../../../core/utils/share_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
@@ -255,7 +255,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                   _CircleIconButton(
                     icon: Icons.ios_share_rounded,
                     label: 'مشاركة',
-                    onTap: () => Share.share(article.link, subject: article.title),
+                    onTap: () => ShareUtils.share(context, article.link, subject: article.title),
                   ),
                   const SizedBox(width: 4),
                 ],
@@ -678,7 +678,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                 _BottomAction(
                   icon: Icons.ios_share_rounded,
                   label: 'مشاركة',
-                  onTap: () => Share.share(article.link, subject: article.title),
+                  onTap: () => ShareUtils.share(context, article.link, subject: article.title),
                 ),
                 _BottomAction(
                   icon: isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,

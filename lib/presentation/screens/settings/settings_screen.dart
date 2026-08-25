@@ -75,7 +75,7 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsTile(
             icon: Icons.ios_share_rounded,
             label: 'مشاركة التطبيق',
-            onTap: () => ShareUtils.shareApp(),
+            onTap: () => ShareUtils.shareApp(context),
           ),
 
           const _SectionHeader(title: 'السياسات القانونية'),
@@ -103,12 +103,7 @@ class SettingsScreen extends ConsumerWidget {
           Center(
             child: Column(
               children: [
-                // ضغطة مطوّلة على الشعار = دخول المحرّرين (مخفي عن القرّاء،
-                // فتسجيل الدخول غير معروض لكن لوحة التحرير تظل متاحة للإدارة).
-                GestureDetector(
-                  onLongPress: () => context.push('/login'),
-                  child: const AppLogo(height: 28),
-                ),
+                const AppLogo(height: 28),
                 const SizedBox(height: 8),
                 FutureBuilder<PackageInfo>(
                   future: PackageInfo.fromPlatform(),

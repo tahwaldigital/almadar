@@ -18,13 +18,40 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
   final _scrollController = ScrollController();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedCategoryId = 0;
+  DateTime _lastRefresh = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // عند العودة للتطبيق نحدّث الأخبار تلقائيًا، مع كبح 30 ثانية لتفادي
+    // إعادة الجلب المتكرر عند التبديل السريع بين التطبيقات.
+    if (state == AppLifecycleState.resumed &&
+        DateTime.now().difference(_lastRefresh).inSeconds >= 30) {
+      _refresh();
+    }
+  }
+
+  Future<void> _refresh() async {
+    _lastRefresh = DateTime.now();
+    await ref.read(latestNewsProvider.notifier).loadInitial();
+    if (!mounted) return;
+    ref.invalidate(breakingNewsProvider);
+    ref.invalidate(trendingNewsProvider);
+  }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
     super.dispose();
   }
@@ -77,11 +104,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
         body: RefreshIndicator(
           color: AppColors.primaryContainer,
-          onRefresh: () async {
-            await ref.read(latestNewsProvider.notifier).loadInitial();
-            ref.invalidate(breakingNewsProvider);
-            ref.invalidate(trendingNewsProvider);
-          },
+          onRefresh: _refresh,
           child: CustomScrollView(
             slivers: [
               // شريط الأخبار العاجلة المتحرك (تحت الهيدر، عرض كامل)
