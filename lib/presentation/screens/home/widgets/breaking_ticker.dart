@@ -1,5 +1,6 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -15,55 +16,26 @@ class BreakingTicker extends ConsumerStatefulWidget {
   ConsumerState<BreakingTicker> createState() => _BreakingTickerState();
 }
 
-class _BreakingTickerState extends ConsumerState<BreakingTicker>
-    with SingleTickerProviderStateMixin {
+class _BreakingTickerState extends ConsumerState<BreakingTicker> {
   final _ctrl = ScrollController();
-  Ticker? _ticker;
-  Duration _last = Duration.zero;
-  bool _reduceMotion = false;
-
-  // ── سرعة الشريط ────────────────────────────────────────────────────────
-  // السرعة بالبكسل/الثانية، **مستقلة عن معدّل الإطارات** (تُحسب من الزمن
-  // الفعلي المنقضي) فتظهر بنفس السرعة على شاشات 60/90/120Hz.
-  // 20 بكسل/ثانية = إيقاع هادئ مريح للقراءة (أبطأ من 23 السابقة).
-  // زوّدها لتسريع، قلّلها لتبطيء.
-  static const double _pxPerSecond = 20;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _ticker = createTicker(_onTick)..start();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // احترام «تقليل الحركة» في إعدادات الوصول: يتوقّف الشريط عن التمرير.
-    _reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-  }
-
-  void _onTick(Duration elapsed) {
-    final dtSec = (elapsed - _last).inMicroseconds / 1e6;
-    _last = elapsed;
-    if (_reduceMotion || !_ctrl.hasClients) return;
-    final pos = _ctrl.position;
-    final max = pos.maxScrollExtent;
-    if (max <= 0) return;
-    // تجاهُل الفجوات الكبيرة (رجوع من الخلفية) حتى لا يقفز الشريط دفعة واحدة.
-    if (dtSec <= 0 || dtSec > 0.25) return;
-    // القائمة معروضة نسختين متطابقتين، فنلتفّ عند نهاية النسخة الأولى
-    // (عرض مجموعة واحدة = (المدى + عرض النافذة) ÷ 2). لحظتها تكون النسخة
-    // الثانية تحت المؤشر، فيبدو التمرير لا نهائيًا بلا أي قفزة بصرية.
-    final oneSet = (max + pos.viewportDimension) / 2;
-    final wrapAt = oneSet <= max ? oneSet : max;
-    var next = _ctrl.offset + _pxPerSecond * dtSec;
-    if (next >= wrapAt) next -= wrapAt;
-    _ctrl.jumpTo(next.clamp(0.0, max));
+    _timer = Timer.periodic(const Duration(milliseconds: 30), (_) {
+      if (!_ctrl.hasClients) return;
+      final max = _ctrl.position.maxScrollExtent;
+      if (max <= 0) return;
+      var next = _ctrl.offset + 0.7;
+      if (next >= max) next = 0;
+      _ctrl.jumpTo(next);
+    });
   }
 
   @override
   void dispose() {
-    _ticker?.dispose();
+    _timer?.cancel();
     _ctrl.dispose();
     super.dispose();
   }
@@ -116,45 +88,38 @@ class _BreakingTickerState extends ConsumerState<BreakingTicker>
               ],
             ),
           ),
-          // الشريط المتحرك — نعرض العناصر **مرّتين** لالتفاف سلس بلا قفزة.
-          // الفاصل النقطي جزء من كل عنصر (لاحقًا له) حتى تكون النسختان
-          // متطابقتين دوريًا تمامًا فيصحّ حساب نقطة الالتفاف.
+          // الشريط المتحرك
           Expanded(
-            child: ListView.builder(
+            child: ListView.separated(
               controller: _ctrl,
               scrollDirection: Axis.horizontal,
               physics: const NeverScrollableScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 14),
-              itemCount: items.length * 2,
+              itemCount: items.length,
+              separatorBuilder: (_, __) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Center(
+                  child: Container(
+                    width: 4,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.secondary.withValues(alpha: 0.5),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ),
               itemBuilder: (context, i) {
-                final a = items[i % items.length];
+                final a = items[i];
                 return Center(
                   child: GestureDetector(
                     onTap: () => context.push('/article/${a.id}', extra: a),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          a.title,
-                          style: AppTypography.labelMd.copyWith(
-                            color: isDark
-                                ? AppColors.inverseOnSurface
-                                : AppColors.onSurface,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: Container(
-                            width: 4,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: AppColors.secondary.withValues(alpha: 0.5),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      a.title,
+                      style: AppTypography.labelMd.copyWith(
+                        color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 );

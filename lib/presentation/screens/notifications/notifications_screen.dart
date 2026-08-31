@@ -10,26 +10,11 @@ import '../../../core/utils/date_utils.dart';
 import '../../providers/content_providers.dart';
 import '../../widgets/status_views.dart';
 
-class NotificationsScreen extends ConsumerStatefulWidget {
+class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
 
   @override
-  ConsumerState<NotificationsScreen> createState() =>
-      _NotificationsScreenState();
-}
-
-class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // علّم الإشعارات كمقروءة عند فتح المركز (يُصفّر الشارة).
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      markNotificationsSeen(ref);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final notifsAsync = ref.watch(receivedNotificationsProvider);
 
@@ -41,14 +26,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            tooltip: 'مسح المحفوظ محليًا',
+            tooltip: 'مسح الكل',
             onPressed: () async {
               final ok = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  title: const Text('مسح الإشعارات المحفوظة محليًا؟'),
-                  content: const Text(
-                      'سيُزال ما هو مخزّن على جهازك فقط؛ آخر الأخبار ستظل تظهر من الخادم.'),
+                  title: const Text('مسح كل الإشعارات؟'),
+                  content: const Text('لا يمكن التراجع عن هذا الإجراء.'),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx, false),
@@ -93,33 +77,22 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               itemBuilder: (_, i) {
                 final n = items[i];
                 final postId = n['post_id']?.toString();
-                final time = (n['date'] ?? n['time']) as String?;
-                final isBreaking = n['is_breaking'] == true;
+                final time = n['time'] as String?;
                 return ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: isBreaking
-                        ? AppColors.primary
-                        : AppColors.primaryContainer,
-                    child: Icon(
-                      isBreaking
-                          ? Icons.priority_high_rounded
-                          : Icons.notifications,
-                      color: Colors.white,
-                      size: 20,
-                    ),
+                  leading: const CircleAvatar(
+                    backgroundColor: AppColors.primaryContainer,
+                    child: Icon(Icons.notifications, color: Colors.white, size: 20),
                   ),
                   title: Text(
                     (n['title'] ?? '').toString(),
-                    style: AppTypography.labelMd
-                        .copyWith(fontWeight: FontWeight.w700),
+                    style: AppTypography.labelMd.copyWith(fontWeight: FontWeight.w700),
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if ((n['body'] ?? '').toString().isNotEmpty)
-                        Text((n['body']).toString(),
-                            maxLines: 2, overflow: TextOverflow.ellipsis),
-                      if (time != null && time.isNotEmpty)
+                        Text((n['body']).toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
+                      if (time != null)
                         Text(
                           AppDateUtils.timeAgo(time),
                           style: AppTypography.labelSm.copyWith(

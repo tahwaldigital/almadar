@@ -5,7 +5,6 @@ import 'core/theme/app_theme.dart';
 import 'presentation/providers/settings_providers.dart';
 import 'presentation/providers/theme_providers.dart';
 import 'presentation/router/app_router.dart';
-import 'presentation/widgets/app_availability_gate.dart';
 
 class AlmadarApp extends ConsumerWidget {
   const AlmadarApp({super.key});
@@ -37,7 +36,7 @@ class AlmadarApp extends ConsumerWidget {
               data: MediaQuery.of(context).copyWith(
                 textScaler: TextScaler.linear(scale),
               ),
-              child: AppAvailabilityGate(child: child!),
+              child: child!,
             ),
           ),
         );

@@ -19,39 +19,24 @@ class LatestNewsSection extends ConsumerStatefulWidget {
 }
 
 class _LatestNewsSectionState extends ConsumerState<LatestNewsSection> {
-  /// القائمة هنا غير قابلة للتمرير بذاتها (shrinkWrap + NeverScrollable)، لذا
-  /// نستمع لتمرير الـScrollable الأب لتشغيل التحميل التدريجي.
-  ScrollPosition? _parentPosition;
+  final _scrollController = ScrollController();
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final position = Scrollable.maybeOf(context)?.position;
-    if (!identical(position, _parentPosition)) {
-      _parentPosition?.removeListener(_onScroll);
-      _parentPosition = position;
-      _parentPosition?.addListener(_onScroll);
-    }
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
-    _parentPosition?.removeListener(_onScroll);
+    _scrollController.dispose();
     super.dispose();
   }
 
   void _onScroll() {
-    final position = _parentPosition;
-    if (position == null || !position.hasPixels) return;
-    // محتوى أقصر من الشاشة (لا يوجد تمرير فعلي) — لا نُطلق تحميلًا تلقائيًا.
-    if (position.maxScrollExtent <= 0) return;
-    if (position.pixels >= position.maxScrollExtent - 300) {
-      // حمّل من المزوّد الصحيح حسب القسم المعروض.
-      if (widget.categoryId == 0) {
-        ref.read(latestNewsProvider.notifier).loadMore();
-      } else {
-        ref.read(categoryNewsProvider(widget.categoryId).notifier).loadMore();
-      }
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 300) {
+      ref.read(latestNewsProvider.notifier).loadMore();
     }
   }
 
@@ -99,6 +84,7 @@ class _LatestNewsSectionState extends ConsumerState<LatestNewsSection> {
               );
             }
             return ListView.separated(
+              controller: _scrollController,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: articles.length + (hasMore ? 1 : 0),
