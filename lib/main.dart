@@ -109,70 +109,70 @@ Future<void> main() async {
 
   final prefs = await SharedPreferences.getInstance();
 
-  // // Firebase (safe init — works without google-services.json during development)
-  // bool firebaseReady = false;
-  // try {
-  //   await Firebase.initializeApp(
-  //     options: const FirebaseOptions(
-  //       apiKey: 'AIzaSyD9d1hFgzJdMMuoN4lHThQwA5QCN2Cr0cA',
-  //       appId: '1:523658629771:ios:edd55fe67a46eed6537a8e',
-  //       messagingSenderId: '523658629771',
-  //       projectId: 'almadar-b09df',
-  //       storageBucket: 'almadar-b09df.firebasestorage.app',
-  //       iosBundleId: 'com.almadar.almadarNews',
-  //     ),
-  //   );
-  //   firebaseReady = true;
-  // } catch (_) {
-  //   // Firebase not configured yet
-  // }
-  //
-  //   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  // await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-  //   alert: true,
-  //   badge: true,
-  //   sound: true,
-  // );
-  // final settings =  await FirebaseMessaging.instance.requestPermission(
-  //     alert: true,
-  //     badge: true,
-  //     sound: true,
-  //   );
-  // debugPrint("Authorization: ${settings.authorizationStatus}");
-  //   const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-  //   const iosInit = DarwinInitializationSettings();
-  //   const initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
-  //   await _localNotifications.initialize(initSettings);
-  //
-  //   FirebaseMessaging.onMessage.listen(_showNotification);
-  //   FirebaseMessaging.onMessageOpenedApp.listen(_routeFromMessage);
-  //
-  //   // Subscribe to the topics the WordPress plugin publishes to.
-  //   final messaging = FirebaseMessaging.instance;
-  //   await messaging.subscribeToTopic(ApiConstants.topicAll);
-  //   await messaging.subscribeToTopic(ApiConstants.topicBreaking);
-  //
-  //   // Register the device token with the backend (best-effort).
-  //   try {
-  //     final fcmToken = await messaging.getToken();
-  //     print("fcmToken");
-  //     final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-  //     debugPrint("APNS Token: $apnsToken");
-  //     print(fcmToken);
-  //     if (fcmToken != null) {
-  //       await DioClient().post(
-  //         ApiConstants.devicesRegister,
-  //         data: {
-  //           'token': fcmToken,
-  //           'platform': Platform.isIOS ? 'ios' : 'android',
-  //           'topics': [ApiConstants.topicAll, ApiConstants.topicBreaking],
-  //           'lang': 'ar',
-  //         },
-  //       );
-  //     }
-  //   } catch (_) {
-  //     // Backend may be unreachable or push disabled; ignore.
-  //   }
+  // Firebase (safe init — works without google-services.json during development)
+  bool firebaseReady = false;
+  try {
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+        apiKey: 'AIzaSyD9d1hFgzJdMMuoN4lHThQwA5QCN2Cr0cA',
+        appId: '1:523658629771:ios:edd55fe67a46eed6537a8e',
+        messagingSenderId: '523658629771',
+        projectId: 'almadar-b09df',
+        storageBucket: 'almadar-b09df.firebasestorage.app',
+        iosBundleId: 'com.almadar.almadarNews',
+      ),
+    );
+    firebaseReady = true;
+  } catch (_) {
+    // Firebase not configured yet
+  }
+
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+  final settings =  await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+  debugPrint("Authorization: ${settings.authorizationStatus}");
+    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const iosInit = DarwinInitializationSettings();
+    const initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
+    await _localNotifications.initialize(initSettings);
+
+    FirebaseMessaging.onMessage.listen(_showNotification);
+    FirebaseMessaging.onMessageOpenedApp.listen(_routeFromMessage);
+
+    // Subscribe to the topics the WordPress plugin publishes to.
+    final messaging = FirebaseMessaging.instance;
+    await messaging.subscribeToTopic(ApiConstants.topicAll);
+    await messaging.subscribeToTopic(ApiConstants.topicBreaking);
+
+    // Register the device token with the backend (best-effort).
+    try {
+      final fcmToken = await messaging.getToken();
+      print("fcmToken");
+      final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+      debugPrint("APNS Token: $apnsToken");
+      print(fcmToken);
+      if (fcmToken != null) {
+        await DioClient().post(
+          ApiConstants.devicesRegister,
+          data: {
+            'token': fcmToken,
+            'platform': Platform.isIOS ? 'ios' : 'android',
+            'topics': [ApiConstants.topicAll, ApiConstants.topicBreaking],
+            'lang': 'ar',
+          },
+        );
+      }
+    } catch (_) {
+      // Backend may be unreachable or push disabled; ignore.
+    }
 
   runApp(
     ProviderScope(
