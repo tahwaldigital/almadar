@@ -247,7 +247,22 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                   _CircleIconButton(
                     icon: Icons.ios_share_rounded,
                     label: 'مشاركة',
-                    onTap: () => Share.share(article.link, subject: article.title),
+                    onTap: ()async{
+                      debugPrint(  " article.link");
+                      debugPrint(   article.link);
+
+                      try {
+                        await Share.share(
+                          article.link,
+                          subject: article.title,
+                        );
+                        debugPrint('Share success');
+
+                      } catch (e, s) {
+                        debugPrint(e.toString());
+                        debugPrint(s.toString());
+                      }
+                    },
                   ),
                   const SizedBox(width: 4),
                 ],
@@ -659,8 +674,22 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                 _BottomAction(
                   icon: Icons.ios_share_rounded,
                   label: 'مشاركة',
-                  onTap: () => Share.share(article.link, subject: article.title),
-                ),
+                  onTap: ()async{
+                    debugPrint(  " article.link");
+                    debugPrint(   article.link);
+
+                    try {
+                      await Share.share(
+                        article.link,
+                        subject: article.title,
+                      );
+                      debugPrint('Share success');
+
+                    } catch (e, s) {
+                      debugPrint(e.toString());
+                      debugPrint(s.toString());
+                    }
+                  },                ),
                 _BottomAction(
                   icon: isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
                   label: 'المظهر',
