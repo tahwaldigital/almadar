@@ -12,17 +12,17 @@ class ShareUtils {
   /// إلزامي على iOS: بدونه تنهار الورقة على الآيباد (popover بلا مرساة) وكذلك
   /// على الآيفون منذ iOS 26. لذلك لا يُعاد null أبدًا — إن تعذّر اشتقاق المستطيل
   /// من الودجت نرجع مستطيلًا في منتصف الشاشة كحل بديل مضمون.
+  ///
+  /// الآيباد يرفض أي مستطيل يخرج جزء منه عن حدود الشاشة (مثل عنصر قائمة نصفه
+  /// مخفي بالتمرير)، لذلك نقصّ المستطيل على حدود الشاشة قبل إرساله.
   static Rect _originFrom(BuildContext context) {
+    final screen = Offset.zero & MediaQuery.sizeOf(context);
     final ro = context.findRenderObject();
-    if (ro is RenderBox && ro.hasSize) {
-      return ro.localToGlobal(Offset.zero) & ro.size;
+    if (ro is RenderBox && ro.attached && ro.hasSize) {
+      final rect = (ro.localToGlobal(Offset.zero) & ro.size).intersect(screen);
+      if (rect.width > 0 && rect.height > 0) return rect;
     }
-    final size = MediaQuery.sizeOf(context);
-    return Rect.fromCenter(
-      center: Offset(size.width / 2, size.height / 2),
-      width: 1,
-      height: 1,
-    );
+    return Rect.fromCenter(center: screen.center, width: 1, height: 1);
   }
 
   /// يفتح ورقة المشاركة الخاصة بالنظام.

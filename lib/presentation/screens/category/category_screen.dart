@@ -408,9 +408,12 @@ class _CategoryNewsItem extends ConsumerWidget {
                             child: Icon(Icons.bookmark_outline_rounded, size: 18, color: AppColors.secondary),
                           ),
                           const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: () => ShareUtils.share(context, article.link),
-                            child: Icon(Icons.share_outlined, size: 18, color: AppColors.secondary),
+                          // سياق الأيقونة نفسها حتى تُثبَّت ورقة المشاركة عليها في الآيباد.
+                          Builder(
+                            builder: (iconContext) => GestureDetector(
+                              onTap: () => ShareUtils.share(iconContext, article.link),
+                              child: Icon(Icons.share_outlined, size: 18, color: AppColors.secondary),
+                            ),
                           ),
                         ],
                       ),

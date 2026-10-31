@@ -252,10 +252,13 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                   onTap: () => context.pop(),
                 ),
                 actions: [
-                  _CircleIconButton(
-                    icon: Icons.ios_share_rounded,
-                    label: 'مشاركة',
-                    onTap: () => ShareUtils.share(context, article.link, subject: article.title),
+                  // سياق الزر نفسه حتى تُثبَّت ورقة المشاركة عليه في الآيباد.
+                  Builder(
+                    builder: (buttonContext) => _CircleIconButton(
+                      icon: Icons.ios_share_rounded,
+                      label: 'مشاركة',
+                      onTap: () => ShareUtils.share(buttonContext, article.link, subject: article.title),
+                    ),
                   ),
                   const SizedBox(width: 4),
                 ],
@@ -675,10 +678,12 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                   label: 'الخط',
                   onTap: _openReadingSettings,
                 ),
-                _BottomAction(
-                  icon: Icons.ios_share_rounded,
-                  label: 'مشاركة',
-                  onTap: () => ShareUtils.share(context, article.link, subject: article.title),
+                Builder(
+                  builder: (buttonContext) => _BottomAction(
+                    icon: Icons.ios_share_rounded,
+                    label: 'مشاركة',
+                    onTap: () => ShareUtils.share(buttonContext, article.link, subject: article.title),
+                  ),
                 ),
                 _BottomAction(
                   icon: isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
