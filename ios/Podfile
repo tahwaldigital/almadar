@@ -1,4 +1,4 @@
-# Firebase iOS SDK 11.x (يجرّه firebase_messaging 15.x) يتطلب iOS 13 كحد أدنى.
+# Uncomment this line to define a global platform for your project
 platform :ios, '13.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
@@ -29,7 +29,6 @@ flutter_ios_podfile_setup
 
 target 'Runner' do
   use_frameworks!
-  use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
@@ -40,9 +39,14 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
-    target.build_configurations.each do |config|
-      # بعض الـ pods تعيد ضبط الهدف إلى قيمة أقل؛ نفرض 13.0 على الجميع.
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+
+    # Fix Firebase Swift experimental feature issue
+    if target.name == "FirebaseCoreInternal" || target.name == "FirebaseSessions"
+      target.build_configurations.each do |config|
+        config.build_settings['OTHER_SWIFT_FLAGS'] ||= ['$(inherited)']
+        config.build_settings['OTHER_SWIFT_FLAGS'] << '-enable-experimental-feature AccessLevelOnImport'
+      end
     end
+
   end
 end
