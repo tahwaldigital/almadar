@@ -18,9 +18,9 @@ if (keyPropsFile.exists()) {
 
 android {
     namespace = "com.almadar.almadar_news"
-    // مثبّتة صراحةً على Android 15 (API 35) لاستيفاء شرط Google Play
-    // (targetSdk ضمن سنة من أحدث إصدار). لا تعتمد على القيمة الافتراضية لفلاتر.
-    compileSdk = 35
+    // مثبّتة صراحةً على Android 16 (API 36) — Google Play بات يتطلّب استهداف
+    // المستوى 36 كحد أدنى. لا تعتمد على القيمة الافتراضية لفلاتر.
+    compileSdk = 36
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -44,8 +44,10 @@ android {
 
     defaultConfig {
         applicationId = "almadar.news"
-        minSdk        = flutter.minSdkVersion
-        targetSdk     = 35 // Android 15 — شرط Google Play اعتبارًا من 31 أغسطس 2026
+        // مثبّتة صراحةً على 24 (Android 7.0) — شرط ميزة "الحماية التلقائية" في Google Play.
+        // لا تعتمد على القيمة الافتراضية لفلاتر (كانت 21 وتسبّبت في تحذير Play Console).
+        minSdk        = 24
+        targetSdk     = 36 // Android 16 — شرط Google Play الحالي (كان 35 وأصبح غير كافٍ)
         versionCode   = flutter.versionCode
         versionName   = flutter.versionName
     }
