@@ -7,7 +7,8 @@ name: iOS Build
 
 on:
   push:
-    branches: [main]
+    # فروع الدمج بتتبني كمان عشان نتأكد إنها بتشتغل على Mac قبل ما تدخل main.
+    branches: [main, 'merge/**']
   pull_request:
     branches: [main]
   workflow_dispatch: # تشغيل يدوي من تبويب Actions

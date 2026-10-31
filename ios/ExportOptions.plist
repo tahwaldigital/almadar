@@ -6,9 +6,9 @@
 	<key>method</key>
 	<string>app-store</string>
 
-	<!-- استبدل TEAMID بمعرّف فريقك في Apple Developer -->
+	<!-- فريق Apple Developer المنشور عليه التطبيق (نفس DEVELOPMENT_TEAM في project.pbxproj) -->
 	<key>teamID</key>
-	<string>REPLACE_WITH_TEAM_ID</string>
+	<string>MZJ4M5HPKK</string>
 
 	<key>uploadSymbols</key>
 	<true/>
