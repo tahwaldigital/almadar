@@ -85,8 +85,6 @@ flutter:
 
   assets:
     - assets/images/
-    - assets/icons/
-    - assets/animations/
 
   fonts:
     # خط عربي أساسي (Tajawal) — يعرض العربية بشكل صحيح في كل التطبيق.
