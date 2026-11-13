@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import '../constants/api_constants.dart';
 import '../errors/exceptions.dart';
+import 'api_hosts.dart';
 
 class DioClient {
   late final Dio _dio;
@@ -45,28 +48,91 @@ class DioClient {
     String path, {
     Map<String, dynamic>? queryParameters,
     Options? options,
-  }) async {
-    try {
-      return await _dio.get<T>(path,
-          queryParameters: queryParameters, options: options);
-    } on DioException catch (e) {
-      throw _handleDioError(e);
-    }
-  }
+  }) =>
+      _withFailover(
+        path,
+        (url) => _dio.get<T>(url,
+            queryParameters: queryParameters, options: options),
+      );
 
   Future<Response<T>> post<T>(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Options? options,
-  }) async {
-    try {
-      return await _dio.post<T>(path,
-          data: data, queryParameters: queryParameters, options: options);
-    } on DioException catch (e) {
-      throw _handleDioError(e);
+  }) =>
+      _withFailover(
+        path,
+        (url) => _dio.post<T>(url,
+            data: data, queryParameters: queryParameters, options: options),
+      );
+
+  /// Sends the request to the live domain. If that domain can't be reached
+  /// (blocked in the user's country, down, or no longer serving the API), the
+  /// same request is tried on the other configured domains. If every domain
+  /// fails, Remote Config is asked once for a newer list before giving up, so
+  /// moving the site never needs an app update.
+  Future<Response<T>> _withFailover<T>(
+    String path,
+    Future<Response<T>> Function(String url) send,
+  ) async {
+    final hosts = ApiHosts.instance;
+    final ours = hosts.owns(path);
+    var candidates = hosts.candidatesFor(path);
+    DioException? lastError;
+
+    for (var round = 0; round < 2; round++) {
+      for (final url in candidates) {
+        try {
+          final res = await send(url);
+          if (!ours) return res;
+          if (!_isHtml(res)) {
+            hosts.markWorking(url);
+            return res;
+          }
+          // 200 with an HTML page (parked domain, block page): not our API.
+          lastError = DioException.badResponse(
+            statusCode: res.statusCode ?? 0,
+            requestOptions: res.requestOptions,
+            response: res,
+          );
+        } on DioException catch (e) {
+          lastError = e;
+          if (!ours || !_isHostFailure(e)) throw _handleDioError(e);
+        }
+      }
+      if (round > 0 || !await hosts.refresh()) break;
+      candidates = hosts.candidatesFor(path);
+    }
+    throw _handleDioError(lastError!);
+  }
+
+  /// Errors that mean "this domain is unusable", as opposed to the API itself
+  /// answering with an error. Only these move the request to another domain.
+  static bool _isHostFailure(DioException e) {
+    switch (e.type) {
+      case DioExceptionType.connectionError:
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.badCertificate:
+        return true;
+      case DioExceptionType.unknown:
+        // A reset during the TLS handshake is how a filtered domain usually fails.
+        return e.error is TlsException || e.error is SocketException;
+      case DioExceptionType.badResponse:
+        // The API always answers in JSON; anything else came from something
+        // sitting in front of it (redirect, block page, parked domain).
+        return !_isApiResponse(e.response);
+      default:
+        return false;
     }
   }
+
+  static bool _isApiResponse(Response<dynamic>? res) =>
+      res?.headers.value(Headers.contentTypeHeader)?.contains('json') ?? false;
+
+  static bool _isHtml(Response<dynamic> res) =>
+      res.headers.value(Headers.contentTypeHeader)?.contains('text/html') ??
+      false;
 
   Exception _handleDioError(DioException e) {
     switch (e.type) {

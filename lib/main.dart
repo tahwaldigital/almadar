@@ -16,6 +16,7 @@ import 'package:go_router/go_router.dart';
 
 import 'app.dart';
 import 'core/constants/api_constants.dart';
+import 'core/network/api_hosts.dart';
 import 'core/network/dio_client.dart';
 import 'core/services/notification_store.dart';
 import 'presentation/providers/providers.dart';
@@ -260,6 +261,10 @@ Future<void> main() async {
   } catch (_) {
     // Firebase not configured yet
   }
+
+  // الدومين اللي التطبيق بيكلّمه بيتحدد هنا قبل أي طلب شبكة (Remote Config ← آخر
+  // دومين اشتغل ← الافتراضي)، من غير ما نستنى الشبكة عشان الفتح مايتأخرش.
+  await ApiHosts.instance.init(prefs, firebaseReady: firebaseReady);
 
   // إشعارات محلية: تُهيّأ دائمًا (تعمل حتى بدون Firebase — أساسية لـ iOS) وتطلب
   // إذن الإشعارات على iOS.

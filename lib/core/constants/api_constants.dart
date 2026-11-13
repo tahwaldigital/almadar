@@ -2,10 +2,10 @@ class ApiConstants {
   ApiConstants._();
 
   // Site + custom plugin namespace (Almadar Mobile API).
-  // IMPORTANT: use the canonical www host. The server 301-redirects non-www → www,
-  // and that redirect turns POST (register/login) into GET and drops the body,
-  // which made account creation & login fail. Hitting www directly avoids it.
-  static const String siteUrl = 'https://www.almadr-news.com';
+  // This is only the template origin the endpoints below are written against:
+  // DioClient swaps it for the live domain chosen by ApiHosts (Remote Config →
+  // device cache → built-in list), so the app is not tied to this host.
+  static const String siteUrl = 'https://ar.almadr-news.com';
 
   // The site uses plain permalinks, so the working REST form is ?rest_route=.
   // If you enable pretty permalinks, switch apiBase to '$siteUrl/wp-json/almadar/v1'.
